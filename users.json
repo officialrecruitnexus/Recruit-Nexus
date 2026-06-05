@@ -1,0 +1,15 @@
+[
+  {
+    "name": "Shruti S S",
+    "email": "shrutisaste9@gmail.com",
+    "password": "Shruti@1234",
+    "role": "jobseeker"
+  },
+  {
+    "name": "Shruti Saste",
+    "email": "Shrutisaste9@gmail.com",
+    "password": "Shruti@12",
+    "role": "recruiter",
+    "isApproved": true
+  }
+]
