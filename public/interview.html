@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>AI Interview - Recruit Nexus</title>
+   <meta charset="UTF-8">
+    <title>AI Interview - Recruit Nexus</title>
+    
+    <script src="vapi.browser.js"></script>
+    <script src="vapi-client.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@vapi-ai/web@2.1.0/dist/vapi.browser.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; padding-top: 50px; }
+        #status { margin-top: 20px; font-weight: bold; color: blue; }
+        button { padding: 10px 20px; font-size: 16px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Recruit Nexus</h1>
+    <p>Hello! I am Riley. Click the button below to start your interview.</p>
+    <button id="start-btn">Start Interview</button>
+    <div id="status">Loading Riley...</div>
+
+    <script>
+       window.onload = () => {
+    const btn = document.getElementById('start-btn');
+    const status = document.getElementById('status');
+
+    
+    if (window.Vapi) {
+        status.innerText = "Ready to begin...";
+        
+        
+        const vapi = new window.Vapi('5337c482-eba3-4168-8139-640605a107a7');
+
+        btn.onclick = () => {
+            status.innerText = "Connecting to Riley...";
+            
+            vapi.start('c6a30223-7a5f-4eb2-bcce-596c98a6032b');
+        };
+    } else {
+        status.innerText = "Error: Please refresh or check vapi-client.js";
+    }
+};
+    </script>
+</body>
+</html>

@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Resume | Recruit Nexus</title>
+    <link rel="stylesheet" href="dashboard.css">
+    <style>
+    
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; }
+        .container { max-width: 450px; margin: 50px auto; padding: 30px; border: none; border-radius: 12px; background: #fff; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        h2 { color: #2c3e50; text-align: center; margin-bottom: 10px; }
+        p { color: #7f8c8d; text-align: center; font-size: 14px; margin-bottom: 25px; }
+        label { display: block; margin-top: 15px; font-weight: bold; color: #34495e; font-size: 14px; }
+        input { width: 100%; padding: 12px; margin-top: 8px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 14px; }
+        button { width: 100%; padding: 14px; margin-top: 25px; background-color: #3498db; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 16px; transition: background 0.3s ease; }
+        button:hover { background-color: #2980b9; }
+        button:disabled { background-color: #bdc3c7; cursor: not-allowed; }
+        .back-link { display: block; text-align: center; margin-top: 20px; color: #34495e; text-decoration: none; font-size: 14px; }
+        .back-link:hover { text-decoration: underline; }
+    </style>
+</head>
+
+<body class="dashboard-page">
+
+    <div class="container">
+        <h2>AI Resume Analysis</h2>
+        <p>Fill in your career details and our AI will find the best job matches for you.</p>
+
+        <form id="uploadForm">
+            <label for="jobTitle">Desired Job Title</label>
+            <input type="text" id="jobTitle" placeholder="e.g. Java Developer" required>
+
+            <label for="location">Preferred Location</label>
+            <input type="text" id="location" placeholder="e.g. Pune, Mumbai" required>
+
+            <label for="email">Email Address</label>
+            <input type="email" id="email" placeholder="example@mail.com" required>
+            
+            <label for="resumeFile">Upload Resume (PDF only)</label>
+            <input type="file" id="resumeFile" accept=".pdf" required>
+
+            <button type="submit" id="submitBtn">Analyze Resume</button>
+        </form>
+
+        <a href="jobseeker-dashboard.html" class="back-link">← Back to Dashboard</a>
+    </div>
+
+    <script>
+        document.getElementById("uploadForm").onsubmit = async function(e) {
+            e.preventDefault();
+            const btn = document.getElementById("submitBtn");
+            btn.innerText = "Analyzing Resume...";
+            btn.disabled = true;
+
+            const formData = new FormData();
+            
+            formData.append("Job Title", document.getElementById("jobTitle").value);
+            formData.append("Location", document.getElementById("location").value);
+            formData.append("Email Address", document.getElementById("email").value);
+            formData.append("Resume", document.getElementById("resumeFile").files[0]);
+
+            try {
+                
+                const response = await fetch("http://localhost:5678/webhook-test/submit-resume", {
+                    method: "POST",
+                    body: formData
+                });
+
+                if (response.ok) {
+                    alert("Resume submitted successfully! Please check your email for the analysis report.");
+                    window.location.href = "jobseeker-dashboard.html";
+                } else {
+                    alert("Error: The n8n server could not process the data.");
+                }
+            } catch (error) {
+                console.error("Connection error:", error);
+                alert("Connection failed! Make sure your n8n tunnel or local server is running.");
+            } finally {
+                btn.innerText = "Analyze Resume";
+                btn.disabled = false;
+            }
+        };
+    </script>
+
+</body>
+</html>

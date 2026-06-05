@@ -1,0 +1,1153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jobseeker Dashboard | Recruit Nexus</title>
+    <link rel="stylesheet" href="style.css">
+    
+    <script src="https://cdn.jsdelivr.net/npm/@vapi-ai/web@1.0.1/dist/vapi.js"></script>
+    <script src="https://unpkg.com/@vapi-ai/web@1.0.1/dist/vapi.browser.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+    body.dashboard-page {
+        margin: 0 !important;
+        padding: 0 !important;
+        background-color: #0f172a !important; 
+        color: #fff !important;
+        transition: padding-left 0.3s ease-in-out;
+    }
+
+    body.dashboard-page.sidebar-open {
+        padding-left: 260px !important;
+    }
+
+    .sidebar-drawer {
+        position: fixed;
+        top: 0;
+        left: -260px; 
+        width: 260px;
+        height: 100vh;
+        background-color: #1e293b; 
+        color: white;
+        box-shadow: 2px 0px 10px rgba(0,0,0,0.5);
+        z-index: 10000;
+        padding: 20px;
+        box-sizing: border-box;
+        transition: left 0.3s ease-in-out; 
+    }
+
+    .sidebar-drawer.active {
+        left: 0;
+    }
+
+    .drawer-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid #334155;
+        padding-bottom: 15px;
+    }
+
+    .drawer-header h3 {
+        margin: 0;
+        font-size: 1.1rem;
+    }
+
+    .close-sidebar-btn {
+        font-size: 24px;
+        cursor: pointer;
+        color: #94a3b8;
+        transition: color 0.2s;
+    }
+
+    .close-sidebar-btn:hover {
+        color: #ef4444;
+    }
+
+    .drawer-menu {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        margin-top: 20px;
+    }
+
+    .drawer-menu button {
+        background: #334155;
+        color: #fff;
+        border: none;
+        padding: 12px 15px;
+        text-align: left;
+        font-size: 0.95rem;
+        cursor: pointer;
+        border-radius: 6px;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .drawer-menu button:hover {
+        background: #10b981;
+        color: #0f172a;
+    }
+
+    .toggle-sidebar-btn {
+        position: fixed;
+        top: 15px;
+        left: 15px;
+        z-index: 999;
+        padding: 10px 16px;
+        background: #3498db;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: bold;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        transition: background 0.2s;
+    }
+
+    .toggle-sidebar-btn:hover {
+        background: #2980b9;
+    }
+
+    .main-content-wrapper {
+        padding: 80px 20px 20px 20px; 
+        max-width: 1200px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    /* PROFILE UPGRADED PROFILE CSS - SCREENSHOT 2 MATCHED */
+    .profile-section {
+        background: #1e293b;
+        padding: 30px;
+        border-radius: 12px;
+        border: 1px solid #334155;
+        margin-bottom: 40px;
+    }
+    
+    .profile-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+        margin-bottom: 20px;
+    }
+
+    .form-group-profile label {
+        display: block;
+        margin-bottom: 8px;
+        color: #94a3b8;
+        font-weight: bold;
+        font-size: 14px;
+        text-align: left;
+    }
+
+    .form-group-profile input, .form-group-profile textarea {
+        width: 100%;
+        padding: 11px;
+        background: #0f172a;
+        border: 1px solid #334155;
+        color: #fff;
+        border-radius: 6px;
+        box-sizing: border-box;
+    }
+    
+    .form-group-profile input:focus, .form-group-profile textarea:focus {
+        border-color: #10b981;
+        outline: none;
+    }
+
+   @media (max-width: 768px) {
+    .navbar {
+        padding: 0 15px !important;       
+        height: 65px !important;          
+        box-sizing: border-box !important;
+        width: 100% !important;
+        max-width: 100vw !important;
+    }
+
+    
+    .navbar .logo, .navbar img, .navbar h1 {
+        font-size: 18px !important; 
+    }
+
+    
+    .navbar .login-btn, .navbar button {
+        padding: 8px 16px !important;
+        font-size: 14px !important;
+    }
+}
+</style>
+</head>
+
+<body class="dashboard-page">
+
+    <button class="toggle-sidebar-btn" id="toggleSidebarBtn">
+        <i class="fa-solid fa-bars"></i> Menu Panel
+    </button>
+
+    <div class="sidebar-drawer" id="sidebarDrawer">
+        <div class="drawer-header">
+            <h3><i class="fa-solid fa-bars-staggered"></i> Menu Panel</h3>
+            <span class="close-sidebar-btn" id="closeSidebarBtn">&times;</span>
+        </div>
+        <div class="drawer-menu">
+            <button onclick="scrollToSection('profile-section')">
+                <i class="fa-solid fa-user-gear" style="font-size: 16px;"></i> My Profile Panel
+            </button>
+            <button onclick="scrollToSection('recommended-section')">
+                <i class="fa-solid fa-briefcase" style="font-size: 16px;"></i> Recommended Roles
+            </button>
+            <button onclick="scrollToSection('ats-section')">
+                <i class="fa-solid fa-file-invoice" style="font-size: 16px;"></i> AI ATS Resume
+            </button>
+            <button onclick="scrollToSection('interview-section')">
+                <i class="fa-solid fa-microphone" style="font-size: 16px;"></i> Start AI Interview
+            </button>
+        </div>
+    </div>
+
+    <div class="main-content-wrapper">
+
+        <div style="margin-bottom: 30px; text-align: left;">
+            
+   <div style="background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%); padding: 22px 28px; border-radius: 16px; margin-bottom: 25px; border: 1px solid rgba(56, 189, 248, 0.15); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 15px; width: 100%; box-sizing: border-box; clear: both;">
+    
+    <div style="display: flex; align-items: center; gap: 18px;">
+        <div style="width: 50px; height: 50px; background: linear-gradient(45deg, #10b981, #38bdf8); border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 15px rgba(56, 189, 248, 0.3); flex-shrink: 0;">
+            <i class="fa-solid fa-graduation-cap" style="color: #0f172a; font-size: 20px;"></i>
+        </div>
+        
+        <div>
+            <h1 style="margin: 0; font-size: 24px; font-weight: 800; color: #ffffff; letter-spacing: -0.5px; display: flex; align-items: center; gap: 10px; font-family: inherit;">
+                Welcome , <span id="welcomeName" style="background: linear-gradient(to right, #38bdf8, #10b981); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 900;">Shruti S</span> <span style="animation: wave 2.5s infinite; transform-origin: 70% 70%; display: inline-block;"></span>
+            </h1>
+            <p style="margin: 6px 0 0 0; color: #94a3b8; font-size: 14px; font-weight: 400; letter-spacing: 0.2px; line-height: 1.4; font-family: inherit;">
+                <i class="fa-regular fa-compass" style="color: #38bdf8; margin-right: 5px;"></i> Track your optimization parameters, resume scores, and interview pipelines.
+            </p>
+        </div>
+    </div>
+
+    <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); padding: 8px 16px; border-radius: 20px; display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
+        <span style="width: 8px; height: 8px; background: #10b981; border-radius: 50%; display: inline-block; box-shadow: 0 0 8px #10b981;"></span>
+        <span style="color: #10b981; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; font-family: inherit;">Jobseeker Portal Active</span>
+    </div>
+</div>
+
+<style>
+@keyframes wave {
+    0% { transform: rotate( 0.0deg) }
+    10% { transform: rotate(14.0deg) }
+    20% { transform: rotate(-8.0deg) }
+    30% { transform: rotate(14.0deg) }
+    40% { transform: rotate(-4.0deg) }
+    50% { transform: rotate(10.0deg) }
+    60% { transform: rotate( 0.0deg) }
+    100% { transform: rotate( 0.0deg) }
+}
+</style>
+
+
+        </div>
+
+       <div id="profile-section" style="display: none; max-width: 1000px; margin: 0 auto; font-family: 'Inter', sans-serif; color: #1e293b; padding: 20px;">
+    
+    <div style="background: #ffffff; border-radius: 20px; padding: 30px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); display: flex; align-items: center; justify-content: space-between; margin-bottom: 25px; border: 1px solid #e2e8f0;">
+        <div style="display: flex; align-items: center; gap: 20px;">
+            <div style="width: 80px; height: 80px; background: #e0f2fe; border-radius: 50%; display: flex; align-items: center; justify-content: center; position: relative;">
+                <i class="fa-solid fa-user-tie" style="color: #0284c7; font-size: 35px;"></i>
+                <div style="position: absolute; bottom: 0; right: 0; background: #0284c7; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid #fff; cursor: pointer;">
+                    <i class="fa-solid fa-camera" style="color: #fff; font-size: 11px;"></i>
+                </div>
+            </div>
+            <div>
+                <h2 id="lblProfileName" style="margin: 0; font-size: 24px; font-weight: 700; color: #0f172a;">Name</h2>
+                <p id="lblProfileHeadline" style="margin: 5px 0 0 0; color: #0284c7; font-size: 14px; font-weight: 500;">Add Educational, Profile Headline</p>
+            </div>
+        </div>
+        <button onclick="openNaukriModal()" style="background: none; border: none; color: #0284c7; font-size: 18px; cursor: pointer;"><i class="fa-solid fa-pen"></i></button>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 25px;">
+        
+        <div style="display: flex; flex-direction: column; gap: 20px;">
+            
+            <div style="background: #ffffff; border-radius: 16px; padding: 24px; box-shadow: 0 4px 15px rgba(0,0,0,0.04); border: 1px solid #e2e8f0; position: relative;">
+                <h3 style="margin: 0 0 20px 0; font-size: 18px; font-weight: 700; color: #0f172a;">Basic details</h3>
+                <button onclick="openNaukriModal()" style="position: absolute; top: 24px; right: 24px; background: none; border: none; color: #0284c7; cursor: pointer; font-size: 16px;"><i class="fa-solid fa-pen"></i></button>
+                
+                <div style="display: flex; flex-direction: column; gap: 14px; font-size: 14px; color: #475569;">
+                    <div style="display: flex; align-items: center; gap: 12px;"><i class="fa-solid fa-briefcase" style="width: 16px; color: #64748b;"></i> <span id="lblProfileExperience">Fresher</span></div>
+                    <div style="display: flex; align-items: center; gap: 12px;"><i class="fa-solid fa-location-dot" style="width: 16px; color: #64748b;"></i> <span id="lblProfileLocation" style="color: #0284c7; cursor: pointer;">Add location</span></div>
+                    
+                    <div style="display: flex; align-items: center; justify-content: space-between; background: #f8fafc; padding: 8px 12px; border-radius: 8px; border: 1px dashed #cbd5e1;">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <i class="fa-solid fa-envelope" style="width: 16px; color: #64748b;"></i> 
+                            <span id="lblProfileEmail" style="font-weight: 500;">shrutisaste9@gmail.com</span>
+                        </div>
+                        <span style="color: #10b981; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 4px;"><i class="fa-solid fa-circle-check"></i> Verified</span>
+                    </div>
+                    
+                    <div style="display: flex; align-items: center; gap: 12px;"><i class="fa-solid fa-phone" style="width: 16px; color: #64748b;"></i> <span id="lblProfilePhone" style="color: #0284c7; cursor: pointer;">Add Phone</span></div>
+                    <div style="display: flex; align-items: center; gap: 12px;"><i class="fa-brands fa-linkedin" style="width: 16px; color: #64748b;"></i> <span id="lblProfileLinkedin" style="color: #0284c7; cursor: pointer;">Add LinkedIn URL</span></div>
+                </div>
+            </div>
+
+            <div style="background: #ffffff; border-radius: 16px; padding: 24px; box-shadow: 0 4px 15px rgba(0,0,0,0.04); border: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: flex-start;">
+                <div>
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                        <h3 style="margin: 0; font-size: 17px; font-weight: 700; color: #0f172a;">Key skills</h3>
+                        <span style="background: #ecfdf5; color: #059669; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 12px;"><i class="fa-solid fa-arrow-up"></i> Boost 8%</span>
+                    </div>
+                    <p style="margin: 0 0 15px 0; color: #64748b; font-size: 13px;">Recruiters look for candidates with specific key skills</p>
+                    <div id="lblProfileSkills" style="display: flex; flex-wrap: wrap; gap: 8px; font-size: 13px; color: #334155; font-weight: 500;"></div>
+                </div>
+                <button onclick="openNaukriModal()" style="background: none; border: none; color: #0284c7; font-weight: 600; cursor: pointer; font-size: 14px;">Add</button>
+            </div>
+
+            <div style="background: #ffffff; border-radius: 16px; padding: 24px; box-shadow: 0 4px 15px rgba(0,0,0,0.04); border: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: flex-start;">
+                <div>
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                        <h3 style="margin: 0; font-size: 17px; font-weight: 700; color: #0f172a;"></h3>
+                        <span style="background: #ecfdf5; color: #059669; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 12px;"><i class="fa-solid fa-arrow-up"></i> Boost 10%</span>
+                    </div>
+                    <p style="margin: 0 0 12px 0; color: #64748b; font-size: 13px;">Your qualifications help employers know your background</p>
+                    <div id="lblProfileEducation" style="font-size: 14px; font-weight: 600; color: #334155;"></div>
+                </div>
+                <button onclick="openNaukriModal()" style="background: none; border: none; color: #0284c7; font-weight: 600; cursor: pointer; font-size: 14px;">Add</button>
+            </div>
+
+        </div>
+
+        <div>
+            
+            
+            <button onclick="resetDashboardView()" style="width: 100%; margin-top: 20px; background: #64748b; color: #fff; border: none; padding: 12px; border-radius: 10px; font-weight: 600; cursor: pointer;"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</button>
+        </div>
+    </div>
+</div>
+
+<div id="naukriProfileModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); z-index: 9999; align-items: center; justify-content: center;">
+    <div style="background: #ffffff; width: 100%; max-width: 600px; border-radius: 16px; padding: 25px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; max-height: 85vh; overflow-y: auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px;">
+            <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: #0f172a;">Update Personal Details</h3>
+            <button onclick="closeNaukriModal()" style="background: none; border: none; font-size: 20px; color: #94a3b8; cursor: pointer;"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        
+        <form id="profileForm" style="display: flex; flex-direction: column; gap: 15px;">
+            <div>
+                <label style="display: block; font-size: 13px; font-weight: 600; color: #475569; margin-bottom: 6px;">Full Name</label>
+                <input type="text" id="profileName" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; color: #0f172a !important; background-color: #ffffff !important;">
+            </div>
+            <div>
+                <label style="display: block; font-size: 13px; font-weight: 600; color: #475569; margin-bottom: 6px;">Phone Number</label>
+                <input type="text" id="profilePhone" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; color: #0f172a !important; background-color: #ffffff !important;">
+            </div>
+            <div>
+                <label style="display: block; font-size: 13px; font-weight: 600; color: #475569; margin-bottom: 6px;">Highest Qualification</label>
+                <input type="text" id="profileEducation" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; color: #0f172a !important; background-color: #ffffff !important;">
+            </div>
+            <div>
+                <label style="display: block; font-size: 13px; font-weight: 600; color: #475569; margin-bottom: 6px;">Current Location</label>
+                <input type="text" id="profileLocation" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; color: #0f172a !important; background-color: #ffffff !important;">
+            </div>
+            <div>
+                <label style="display: block; font-size: 13px; font-weight: 600; color: #475569; margin-bottom: 6px;">LinkedIn Profile URL</label>
+                <input type="text" id="profileLinkedin" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; color: #0f172a !important; background-color: #ffffff !important;">
+            </div>
+            <div>
+                <label style="display: block; font-size: 13px; font-weight: 600; color: #475569; margin-bottom: 6px;">Total Experience</label>
+                <input type="text" id="profileExperience" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; color: #0f172a !important; background-color: #ffffff !important;">
+            </div>
+            <div>
+                <label style="display: block; font-size: 13px; font-weight: 600; color: #475569; margin-bottom: 6px;">Key Technical Skills</label>
+                <textarea id="profileSkills" rows="3" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; color: #0f172a !important; background-color: #ffffff !important; resize: vertical;"></textarea>
+            </div>
+            
+            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 15px; border-top: 1px solid #f1f5f9; padding-top: 15px;">
+                <button type="button" onclick="closeNaukriModal()" style="background: #f1f5f9; color: #475569; border: none; padding: 10px 18px; font-size: 14px; font-weight: 600; border-radius: 8px; cursor: pointer;">Cancel</button>
+                <button type="submit" style="background: #0284c7; color: #ffffff; border: none; padding: 10px 18px; font-size: 14px; font-weight: 600; border-radius: 8px; cursor: pointer;"><i class="fa-solid fa-floppy-disk"></i> Save Changes</button>
+            </div>
+        </form>
+    </div>
+</div>
+        <div class="container" id="recommended-section">
+            <header style="text-align: center; margin-bottom: 30px;">
+                <h2>Recommended Roles</h2>
+            </header>
+            <div id="jobCards" class="job-grid"></div>
+
+            <div class="manual-apply-section">
+                <h3>Direct Application Portal</h3>
+                <p>Don't see a specific role above? Fill out our general application form. </p>
+                
+                <button onclick="openN8nForm()" class="btn-manual-form">
+                    📝 Explore External Jobs
+                </button>
+            </div>
+
+            <div id="ats-section" class="ats-portal-box" style="margin-top: 40px; padding: 20px; background: #222; border-radius: 8px;">
+                <h2 style="color: #00ff88; text-align: center; margin-top: 0;">🎯 Recruit Nexus - Jobseeker ATS Portal</h2>
+                
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px; color: #ccc; font-weight: bold;">Full Name:</label>
+                    <input type="text" id="seekerName" placeholder="Enter your full name" autocomplete="off" style="width: 100%; padding: 10px; background: #333; border: 1px solid #444; color: #fff; border-radius: 4px;">
+                </div>
+                
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px; color: #ccc; font-weight: bold;">Email Address:</label>
+                    <input type="email" id="seekerEmail" placeholder="Enter your email address" autocomplete="off" style="width: 100%; padding: 10px; background: #333; border: 1px solid #444; color: #fff; border-radius: 4px;">
+                </div>
+                
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px; color: #ccc; font-weight: bold;">Select Resume Template:</label>
+                    <select id="resumeTemplate" style="width: 100%; padding: 10px; background: #333; border: 1px solid #444; color: #fff; border-radius: 4px;">
+                        <option value="Modern Tech Grid">Modern Tech Grid (Best for IT & Engineering)</option>
+                        <option value="Executive Minimalist">Executive Minimalist (Best for Management & Sales)</option>
+                        <option value="Creative Professional">Creative Professional (Best for Design & Media)</option>
+                    </select>
+                </div>
+                
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label style="display: block; margin-bottom: 5px; color: #ccc; font-weight: bold;">Upload Current Resume (PDF):</label>
+                    <input type="file" id="resumeFile" accept=".pdf" onchange="updateFileName()" style="width: 100%; padding: 10px; background: #333; border: 1px solid #444; color: #fff; border-radius: 4px;">
+                    <small id="uploadText" style="display: block; margin-top: 5px; color: #aaa;"></small>
+                </div>
+
+                <button class="scan-btn" onclick="uploadResume()" style="background: #00ff88; color: #000; border: none; padding: 12px 20px; font-size: 16px; font-weight: bold; border-radius: 4px; cursor: pointer; width: 100%; transition: 0.3s;">
+                    Scan Resume with AI 🚀
+                </button>
+
+                <div id="loadingText" style="display: none; color: #ffcc00; font-weight: bold; text-align: center; margin: 20px 0;">
+                    ⏳ AI is scanning your resume, please wait a few seconds...
+                </div>
+
+                <div class="result-card" id="resultCard" style="display: none; margin-top: 30px; border-top: 2px dashed #444; padding-top: 20px;">
+                    <div class="analysis-box" style="background: #2b2b2b; padding: 20px; border-radius: 6px; margin-bottom: 20px; border-left: 5px solid #00ff88;">
+                        <h3 style="color: #00ff88; margin-top: 0;">📊 ATS Analysis Metrics</h3>
+                        <div style="font-size: 16px; margin-bottom: 8px; color: #fff;">
+                            Selected Template: <span id="chosenTemplate" style="color: #3498db; font-weight: bold;"></span>
+                        </div>
+                        <div style="font-size: 18px; margin-bottom: 10px; color: #fff;">
+                            Your ATS Match Score: <span id="atsScore" style="font-weight: bold; color: #00ff88; font-size: 24px;">88%</span>
+                        </div>
+                        <div style="color: #fff;">
+                            <strong>💡 AI Feedback:</strong>
+                            <p id="aiFeedback" style="color: #ccc; font-size: 14px; margin-top: 5px; line-height: 1.5;"></p>
+                        </div>
+                    </div>
+
+                    <div id="pdfResumeContent" class="resume-pdf-sheet" style="background-color: #ffffff; color: #000000; padding: 40px; border-radius: 4px; font-family: Arial, sans-serif;">
+                        <h1 id="pdfCandidateName" class="resume-name" style="font-size: 28px; margin: 0 0 5px 0; color: #000000; text-transform: uppercase; letter-spacing: 1px;"></h1>
+                        <div class="resume-line" style="border: 1px solid #000000; margin-bottom: 20px;"></div>
+                        <pre id="aiImprovedResume" class="resume-text-area" style="white-space: pre-wrap; font-family: Arial, sans-serif; font-size: 14px; line-height: 1.6; color: #000000; margin: 0; text-align: left;"></pre>
+                    </div>
+                    
+                    <button class="download-btn" onclick="downloadATSResume()" style="background: #3498db; color: white; border: none; padding: 14px 20px; font-size: 16px; font-weight: bold; border-radius: 4px; cursor: pointer; width: 100%; margin-top: 20px;">
+                        Download ATS Friendly Resume (PDF) 📥
+                    </button>
+                </div>
+            </div>
+        </div> 
+
+        <div class="chat-btn" id="chatBtn" onclick="toggleChat()">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="robot-svg">
+                <rect x="3" y="11" width="18" height="10" rx="2"></rect>
+                <circle cx="12" cy="5" r="2"></circle>
+                <path d="M12 7v4"></path>
+                <line x1="8" y1="16" x2="8.01" y2="16"></line>
+                <line x1="16" y1="16" x2="16.01" y2="16"></line>
+                <path d="M2 14h1"></path>
+                <path d="M21 14h1"></path>
+            </svg>
+        </div>
+
+        <div class="chat-box" id="chatBox">
+            <div class="chat-header">
+                <span><i class="fas fa-robot"></i> Career Assistant</span>
+                <span class="close-btn" onclick="toggleChat()"><i class="fas fa-times"></i></span>
+            </div>
+            
+            <div class="chat-messages" id="chatMessages">
+                <div class="msg bot-msg">
+                    Hello! 👋 I am your Career Assistant. I can help you find your job application status or answer platform queries. How can I help you today?
+                </div>
+                <div class="typing-indicator" id="typingIndicator">
+                    <span></span> <span></span> <span></span>
+                </div>
+            </div>
+
+            <div class="chat-input-container">
+                <input type="text" id="userInput" placeholder="Type Here..." onkeypress="handleKeyPress(event)">
+                <button onclick="sendMessage()"><i class="fas fa-paper-plane"></i></button>
+            </div>
+        </div>  
+
+        <div id="interview-section" style="margin-top: 50px; margin-bottom: 50px;" class="max-w-4xl w-full bg-slate-800 rounded-2xl shadow-2xl border border-slate-700 p-8 text-center">
+            <h1 class="text-3xl font-bold text-emerald-400 mb-2" style="color: #10b981;">
+                <i class="fa-solid fa-robot mr-2"></i> AI Interview Prep
+            </h1>
+            <p class="text-slate-400 mb-8" style="color: #94a3b8; margin-bottom: 25px;">Your audio and video will be securely recorded, and the evaluation will be saved into the sheet via n8n.</p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; margin-bottom: 30px;">
+                <div class="relative bg-slate-950 aspect-video rounded-xl border border-slate-700 flex items-center justify-center overflow-hidden" style="background: #020617; border: 1px solid #334155; border-radius: 12px; min-height: 220px; position: relative; display: flex; align-items: center; justify-content: center;">
+                    <video id="userCamera" autoplay playsinline muted class="w-full h-full object-cover hidden" style="width: 100%; height: 100%; object-fit: cover; border-radius: 12px;"></video>
+                    
+                    <div id="videoPlaceholder" class="text-center p-4">
+                        <i class="fa-solid fa-video-slash text-slate-600 text-4xl mb-2" style="font-size: 36px; color:#475569; display:block; margin-bottom: 10px;"></i>
+                        <p class="text-xs text-slate-500" style="color: #64748b; font-size: 13px;">Camera is on...</p>
+                    </div>
+
+                    <div id="liveBadge" class="absolute top-3 left-3 bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider hidden pulse-recording" style="position: absolute; top:12px; left:12px; background: #dc2626; color:white; padding: 4px 10px; border-radius: 9999px; font-size: 11px; font-weight: bold;">
+                        <i class="fa-solid fa-circle mr-1 text-[10px]"></i> Live Recording
+                    </div>
+                </div>
+
+                <div class="bg-slate-700/30 border border-slate-700/50 rounded-xl p-6 flex flex-col justify-between text-left" style="background: rgba(51, 65, 85, 0.2); border: 1px solid rgba(51, 65, 85, 0.5); padding: 20px; border-radius: 12px; text-align: left;">
+                    <div>
+                        <h3 class="font-semibold text-slate-200 mb-3" style="color: #e2e8f0; margin-top: 0;"><i class="fa-solid fa-circle-info mr-2 text-emerald-400" style="color: #10b981;"></i>Important Instructions:</h3>
+                        <ul class="text-sm text-slate-400 space-y-2 list-disc list-inside" style="color: #94a3b8; font-size: 14px; line-height: 1.8;">
+                           <li>Please click 'Allow' if the browser requests camera and microphone permissions.</li>
+                           <li>The AI will ask technical questions one by one.</li>
+                           <li>Listen to the question completely before speaking your answer clearly.</li>
+                        </ul>
+                    </div>
+
+                    <div class="mt-6 p-4 bg-slate-950/50 rounded-lg border border-slate-700" style="background: rgba(2, 6, 23, 0.5); border: 1px solid #334155; padding: 12px; border-radius: 8px; margin-top: 15px;">
+                        <span class="text-xs text-slate-500 block uppercase font-bold tracking-wider" style="color: #64748b; font-size: 11px; font-weight: bold; text-transform: uppercase;">System Status</span>
+                        <p id="interviewStatus" class="text-sm font-medium text-amber-400 mt-1" style="color: #10b981; margin: 5px 0 0 0; font-size: 13.5px;">
+                            <i class="fa-solid fa-circle-check mr-2"></i>System is completely ready!
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex flex-col sm:flex-row justify-center items-center gap-4" style="display: flex; gap: 15px; justify-content: center; align-items: center;">
+                <button id="startBtn" onclick="startAIInterview()" class="w-full sm:w-auto px-8 py-4 bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-slate-950 font-bold rounded-xl transition duration-200 shadow-lg shadow-emerald-500/20 cursor-pointer flex items-center justify-center gap-2" style="background: #10b981; color: #020617; font-weight: bold; padding: 14px 28px; border: none; border-radius: 10px; cursor: pointer; font-size: 16px; display: flex; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-microphone-lines text-lg"></i> Start AI Interview
+                </button>
+
+                <button id="stopBtn" onclick="stopAIInterview()" class="w-full sm:w-auto px-8 py-4 bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white font-bold rounded-xl transition duration-200 shadow-lg shadow-rose-600/20 cursor-pointer flex items-center justify-center gap-2" style="background: #e11d48; color: white; font-weight: bold; padding: 14px 28px; border: none; border-radius: 10px; cursor: pointer; font-size: 16px; display: flex; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-phone-slash"></i> End Interview
+                </button>
+            </div>
+        </div>      
+    </div> 
+    
+    <script src="https://cdn.jsdelivr.net/npm/@vapi-ai/web@1.0.1/dist/vapi.browser.js"></script>
+
+<script>
+    const BASE_TUNNEL_URL = "https://3dzqxw2k-5678.inc1.devtunnels.ms/webhook/Job%20Application";
+    const WEBHOOK_URL = "http://localhost:5678/webhook-test/Job%20Application";
+    const N8N_FORM_URL = "https://3dzqxw2k-5678.inc1.devtunnels.ms/form/6677f5d4-d655-460e-ad4c-2df51a22c9b6"; 
+    const RESUME_WEBHOOK_URL = "http://localhost:5678/webhook/parse-resume";
+    const N8N_WEBHOOK_URL = 'http://localhost:5678/webhook/jobseeker-chat';
+    const N8N_PROFILE_UPDATE_URL = "http://localhost:5678/webhook/update-profile"; 
+
+    const VAPI_PUBLIC_KEY = "5337c487-eba3-4168-8139-640605a107ef"; 
+    const ASSISTANT_ID = "a18b8cba-5b23-41d4-946e-c0ea9c73ee4f"; 
+
+    const jobs = JSON.parse(localStorage.getItem("jobs")) || [];
+    let streamRef = null;
+    let vapiInstance = null;
+
+    
+    const toggleSidebarBtn = document.getElementById('toggleSidebarBtn');
+    const closeSidebarBtn = document.getElementById('closeSidebarBtn');
+    const sidebarDrawer = document.getElementById('sidebarDrawer');
+    const bodyEl = document.body;
+
+    toggleSidebarBtn.addEventListener('click', () => {
+        sidebarDrawer.classList.toggle('active');
+        bodyEl.classList.toggle('sidebar-open');
+    });
+
+    closeSidebarBtn.addEventListener('click', () => {
+        sidebarDrawer.classList.remove('active');
+        bodyEl.classList.remove('sidebar-open');
+    });
+
+    function scrollToSection(sectionId) {
+        const element = document.getElementById(sectionId);
+        if (element) { 
+            element.scrollIntoView({ behavior: 'smooth', block: 'start' }); 
+            if(window.innerWidth <= 768) {
+                sidebarDrawer.classList.remove('active');
+                bodyEl.classList.remove('sidebar-open');
+            }
+        }
+    }
+
+    function renderJobs() {
+    const container = document.getElementById("jobCards");
+    if(!container) return;
+    container.innerHTML = jobs.length ? "" : "<p style='color: #fff;'>No automated jobs found in the database.</p>";
+
+    jobs.forEach(job => {
+        const card = document.createElement("div");
+        card.className = "job-card";
+        
+       
+        const jobDescription = job.description || job.desc || job.jobDesc || 'No description provided.';
+        const location = job.location || job.loc || 'Not Specified';
+        const experience = job.experience || job.exp || 'Not Specified';
+        const salary = job.salary || job.ctc || 'Not Specified';
+        const id = job.id || job.jobId || 'N/A';
+        const role = job.role || 'N/A';
+
+        card.innerHTML = `
+            <h3 style="margin-top:0; color:#ffffff; font-size: 20px; margin-bottom: 5px;">${job.title}</h3>
+        
+            <p style="color:#b2bec3; font-size: 13px; margin: 0 0 10px 0;">
+                Dept: ${job.category || 'Engineering'} | ID: ${id} | Role: ${role}
+            </p>
+            
+            <div style="display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 15px; font-size: 14px; color: #dfe6e9;">
+                <span>📍 ${location}</span>
+                <span>💼 ${experience}</span>
+                <span>💰 ${salary}</span>
+            </div>
+            
+            
+            <div style="background: #ffffff; padding: 12px; border-radius: 8px; margin-bottom: 15px; font-size: 14px; color: #2d3436;">
+                <strong style="color: #2d3436; display: block; margin-bottom: 4px;">📝 Description:</strong>
+                <span style="display: block; white-space: pre-line; line-height: 1.4;">${jobDescription}</span>
+            </div>
+            
+            <!-- 📑 अप्लाय फॉर्म -->
+            <div class="apply-form" style="display: flex; flex-direction: column; gap: 10px;">
+                <input type="text" id="name_${job.id}" placeholder="Full Name" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #636e72; background: #2d3436; color: #fff;">
+                <input type="email" id="email_${job.id}" placeholder="Email Address" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #636e72; background: #2d3436; color: #fff;">
+                
+                <label style="font-size: 13px; font-weight: bold; color: #dfe6e9; display: block; margin-top: 5px;">Attach Resume (PDF):</label>
+                <input type="file" id="file_${job.id}" accept=".pdf" style="color: #dfe6e9;">
+                
+                <button onclick="autoApply('${job.id}', '${job.title}')" id="btn_${job.id}" style="width: 100%; background: #3498db; color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; margin-top: 10px; font-size: 14px;">
+                    Instant Apply
+                </button>
+            </div>
+        `;
+        container.appendChild(card);
+    });
+}
+
+    async function autoApply(jobId, jobTitle) {
+        const name = document.getElementById(`name_${jobId}`).value;
+        const email = document.getElementById(`email_${jobId}`).value;
+        const file = document.getElementById(`file_${jobId}`).files[0];
+        const btn = document.getElementById(`btn_${jobId}`);
+
+        if (!name || !email || !file) { alert("Please provide your name, email address, and a resume!"); return; }
+        btn.disabled = true; btn.innerText = "Processing...";
+
+        const formData = new FormData();
+        formData.append("Candidate Name", name);
+        formData.append("Email Address", email); 
+        formData.append("Applying for Position", jobTitle);
+        formData.append("data", file);
+
+        try {
+            const res = await fetch("https://3dzqxw2k-5678.inc1.devtunnels.ms/webhook/Job%20Application", { method: 'POST', body: formData });
+            if (res.ok) {
+                alert("Success! Check " + email + " for your evaluation results shortly.");
+                btn.innerText = "Applied ✓";
+                btn.style.background = "#28a745";
+            } else { throw new Error("Server error"); }
+        } catch (err) {
+            alert("Connection failed!");
+            btn.disabled = false; btn.innerText = "Instant Apply";
+        }
+    }
+
+    // NEW PROFILE SUBMIT JAVASCRIPT (SENDS NEW FIELDS TO N8N WEBHOOK)
+    document.getElementById('profileForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const updatedData = {
+            email: localStorage.getItem("userEmail"), 
+            name: document.getElementById('profileName').value,
+            phone: document.getElementById('profilePhone').value,
+            education: document.getElementById('profileEducation').value,
+            location: document.getElementById('profileLocation').value,
+            linkedin: document.getElementById('profileLinkedin').value,
+            experience: document.getElementById('profileExperience').value,
+            skills: document.getElementById('profileSkills').value
+        };
+
+        try {
+            const response = await fetch(N8N_PROFILE_UPDATE_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updatedData)
+            });
+
+            if (response.ok) {
+                alert("Profile Google Sheet madhe successfully update zali! 🎉");
+                document.getElementById('welcomeName').innerText = updatedData.name;
+            } else {
+                alert("Google Sheet update fail zale, n8n active aahe ka check kara.");
+            }
+        } catch (error) {
+            console.error("Update error:", error);
+            alert("Server/n8n sobat connection fail zale.");
+        }
+    });
+
+    function openN8nForm() { window.open(N8N_FORM_URL, '_blank'); }
+    
+    function updateFileName() {
+        const fileInput = document.getElementById('resumeFile');
+        const uploadText = document.getElementById('uploadText');
+        if(fileInput && fileInput.files.length > 0) {
+            uploadText.innerText = `✅ Selected File: ${fileInput.files[0].name}`;
+            uploadText.style.color = "#00ff88";
+        }
+    }
+
+    async function uploadResume() {
+        const fileInput = document.getElementById('resumeFile');
+        const name = document.getElementById('seekerName').value;
+        const email = document.getElementById('seekerEmail').value;
+        const template = document.getElementById('resumeTemplate').value;
+        
+        if (!fileInput.files.length || !name || !email) { alert("Please upload Name, Email and Resume PDF!"); return; }
+
+        const formData = new FormData();
+        formData.append("resume", fileInput.files[0]);
+        formData.append("candidateName", name);
+        formData.append("candidateEmail", email);
+        formData.append("selectedTemplate", template);
+        document.getElementById('loadingText').style.display = "block";
+        document.getElementById('resultCard').style.display = "none";
+
+        try {
+            const response = await fetch(RESUME_WEBHOOK_URL, { method: "POST", body: formData });
+            let score = "88", feedback = "Optimized by AI.", improvedResume = "";
+            if (response.ok) {
+                const result = await response.json();
+                if(result.score) score = result.score;
+                if(result.feedback) feedback = result.feedback;
+            }
+            document.getElementById('loadingText').style.display = "none";
+            document.getElementById('resultCard').style.display = "block"; 
+            document.getElementById('chosenTemplate').innerText = template;
+            document.getElementById('atsScore').innerText = score + "%";
+            document.getElementById('aiFeedback').innerText = feedback;
+            document.getElementById('pdfCandidateName').innerText = name;
+            document.getElementById('aiImprovedResume').innerText = `${name.toUpperCase()}\nEmail: ${email}\n[OBJECTIVE]\nOptimized Template Alignment: ${template}`;
+        } catch (error) {
+            document.getElementById('loadingText').style.display = "none";
+            document.getElementById('resultCard').style.display = "block";
+        }
+    }
+
+    function downloadATSResume() {
+        const element = document.getElementById('pdfResumeContent');
+        const candidateName = document.getElementById('seekerName').value || "Candidate";
+        const options = { margin: 15, filename: `${candidateName}_ATS_Resume.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { format: 'a4', orientation: 'portrait' } };
+        html2pdf().set(options).from(element).save();
+    }
+
+    function toggleChat() {
+        const chatBox = document.getElementById('chatBox');
+        chatBox.style.display = (chatBox.style.display === 'none' || chatBox.style.display === '') ? 'flex' : 'none';
+    }
+    
+    function handleKeyPress(event) { if (event.key === 'Enter') sendMessage(); }
+    
+    async function sendMessage() {
+        const inputField = document.getElementById('userInput');
+        const userText = inputField.value.trim();
+        if (!userText) return;
+        appendMessage(userText, 'user-msg');
+        inputField.value = '';
+        document.getElementById('typingIndicator').style.display = 'block';
+
+        try {
+            const response = await fetch(N8N_WEBHOOK_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chatInput: userText, sessionId: "jobseeker_session_101" }) });
+            const data = await response.json();
+            document.getElementById('typingIndicator').style.display = 'none';
+            appendMessage(data.output || "No reply", 'bot-msg');
+        } catch (error) {
+            document.getElementById('typingIndicator').style.display = 'none';
+            appendMessage("Server connection error.", 'bot-msg');
+        }
+    }
+    
+    function appendMessage(text, className) {
+        const chatMessages = document.getElementById('chatMessages');
+        const msg = document.createElement('div'); msg.className = `msg ${className}`; msg.innerText = text;
+        chatMessages.insertBefore(msg, document.getElementById('typingIndicator'));
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    window.startAIInterview = async function() {
+        const statusText = document.getElementById('interviewStatus');
+        const userCamera = document.getElementById('userCamera');
+        const videoPlaceholder = document.getElementById('videoPlaceholder');
+        const liveBadge = document.getElementById('liveBadge');
+
+        if (statusText) statusText.innerHTML = `<i class="fa-solid fa-spinner animate-spin mr-2"></i>Vapi is Connecting...`;
+        
+        try {
+            streamRef = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            if (userCamera) {
+                userCamera.srcObject = streamRef;
+                userCamera.style.display = "block"; 
+                userCamera.classList.remove('hidden');
+            }
+            if (videoPlaceholder) videoPlaceholder.style.display = "none";
+
+            if (typeof Vapi === 'function') {
+                vapiInstance = new Vapi(VAPI_PUBLIC_KEY);
+            } else if (window.VapiWeb) {
+                vapiInstance = new window.VapiWeb(VAPI_PUBLIC_KEY);
+            } else {
+                alert("Vapi SDK is not loaded yet, please refresh the page.");
+                return;
+            }
+            
+            vapiInstance.on('call-start', () => {
+                if (statusText) statusText.innerHTML = `<span style="color:#10b981; font-weight:bold;"><i class="fa-solid fa-comment-dots mr-2"></i>Interview started! Speak now...</span>`;
+                if (liveBadge) liveBadge.classList.remove('hidden');
+            });
+
+            vapiInstance.on('track', (track) => {
+                if (track.kind === 'audio') {
+                    console.log("🔊 AI Audio Track Activated!");
+                    const audioNode = document.createElement('audio');
+                    audioNode.srcObject = new MediaStream([track]);
+                    audioNode.autoplay = true;
+                    document.body.appendChild(audioNode);
+                }
+            });
+             vapiInstance.on('call-end', () => {
+                if (statusText) statusText.innerHTML = `<span style="color:#38bdf8; font-weight:bold;"><i class="fa-solid fa-square-check mr-2"></i>Interview completed!</span>`;
+                cleanupMedia();
+            });
+
+            vapiInstance.on('error', (err) => {
+                console.error("Vapi Error:", err);
+            });
+
+            const currentName = document.getElementById('seekerName').value || "Unknown Candidate";
+            const currentEmail = document.getElementById('seekerEmail').value || "no-email@test.com";
+
+            vapiInstance.start(ASSISTANT_ID, {
+                assistant: {
+                    variableValues: {
+                        "candidateName": currentName,
+                        "candidateEmail": currentEmail
+                    }
+                }
+            });
+
+        } catch (err) {
+            console.log("Camera Connected.");
+            if (statusText) statusText.innerHTML = `<span style="color:#10b981; font-weight:bold;"><i class="fa-solid fa-circle-check mr-2"></i>System is Ready..</span>`;
+        }
+    };
+
+    window.stopAIInterview = function() {
+        if (vapiInstance) vapiInstance.stop();
+        cleanupMedia();
+    };
+
+    function cleanupMedia() {
+        if (streamRef) streamRef.getTracks().forEach(track => track.stop());
+        if (document.getElementById('userCamera')) document.getElementById('userCamera').style.display = "none";
+        if (document.getElementById('videoPlaceholder')) document.getElementById('videoPlaceholder').style.display = "block";
+        if (document.getElementById('liveBadge')) document.getElementById('liveBadge').classList.add('hidden');
+    }
+
+    window.onload = function() { renderJobs(); };
+
+ 
+const profileForm = document.getElementById('profileForm');
+if (profileForm) {
+    profileForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        // Form madhun current values pick kelya
+        const updatedData = {
+            name: document.getElementById('profileName').value,
+            email: document.getElementById('lblProfileEmail').innerText, 
+            phone: document.getElementById('profilePhone').value,
+            education: document.getElementById('profileEducation').value,
+            location: document.getElementById('profileLocation').value,
+            linkedin: document.getElementById('profileLinkedin').value,
+            experience: document.getElementById('profileExperience').value,
+            skills: document.getElementById('profileSkills').value
+        };
+
+        
+        if (document.getElementById('welcomeName') && updatedData.name) {
+            document.getElementById('welcomeName').innerText = updatedData.name;
+        }
+
+        if (document.getElementById('lblProfileName'))      document.getElementById('lblProfileName').innerText = updatedData.name || "Not Specified";
+        if (document.getElementById('lblProfilePhone'))     document.getElementById('lblProfilePhone').innerText = updatedData.phone || "-";
+        if (document.getElementById('lblProfileEducation')) document.getElementById('lblProfileEducation').innerText = updatedData.education || "-";
+        if (document.getElementById('lblProfileLocation'))  document.getElementById('lblProfileLocation').innerText = updatedData.location || "-";
+        if (document.getElementById('lblProfileLinkedin'))  document.getElementById('lblProfileLinkedin').innerText = updatedData.linkedin || "-";
+        if (document.getElementById('lblProfileExperience'))document.getElementById('lblProfileExperience').innerText = updatedData.experience || "-";
+        if (document.getElementById('lblProfileSkills'))    document.getElementById('lblProfileSkills').innerText = updatedData.skills || "-";
+
+        try {
+            
+            const response = await fetch("http://localhost:5678/webhook/update-profile", { 
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updatedData)
+            });
+
+            if (response.ok || response.status === 200 || response.status === 0) {
+                alert("Changes saved successfully to Google Sheet! 🚀");
+                closeNaukriModal(); // Modal automatic close karne
+                
+                if (typeof toggleLinkedInEditForm === 'function') {
+                    toggleLinkedInEditForm();
+                }
+            } else {
+                console.warn("Backend dynamic saving issue, but UI updated.");
+            }
+        } catch (error) {
+            console.error("LinkedIn style network sync failed:", error);
+            alert("Network issue, but changes are active locally!");
+        }
+    });
+}
+
+
+function showProfileSection() {
+    const sectionsToHide = ['recommended-section', 'ats-section', 'interview-section'];
+    sectionsToHide.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = 'none';
+    });
+
+    const profileSec = document.getElementById('profile-section');
+    if (profileSec) {
+        profileSec.style.display = 'block';
+    }
+
+    if (document.getElementById('profileDisplayCard')) {
+        document.getElementById('profileDisplayCard').style.display = 'block';
+    }
+    if (document.getElementById('profileEditFormContainer')) {
+        document.getElementById('profileEditFormContainer').style.display = 'none';
+    }
+    
+    const editBtn = document.getElementById('editProfileBtn');
+    if (editBtn) {
+        editBtn.innerHTML = `<i class="fa-solid fa-pen"></i> Edit Profile`;
+        editBtn.style.background = '#1e293b';
+        editBtn.style.borderColor = '#38bdf8';
+        editBtn.style.color = '#38bdf8';
+    }
+
+    const sidebarDrawer = document.getElementById('sidebarDrawer');
+    const bodyEl = document.body;
+    if (sidebarDrawer && sidebarDrawer.classList.contains('active')) {
+        sidebarDrawer.classList.remove('active');
+        bodyEl.classList.remove('sidebar-open');
+    }
+}
+
+function showAtsSection() {
+    const sections = ['profile-section', 'recommended-section', 'interview-section'];
+    sections.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = 'none';
+    });
+    const atsSec = document.getElementById('ats-section');
+    if (atsSec) atsSec.style.display = 'block';
+}
+
+function showInterviewSection() {
+    const sections = ['profile-section', 'recommended-section', 'ats-section'];
+    sections.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = 'none';
+    });
+    const intSec = document.getElementById('interview-section');
+    if (intSec) intSec.style.display = 'block';
+}
+
+function showRecommendedSection() {
+    const sections = ['profile-section', 'ats-section', 'interview-section'];
+    sections.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = 'none';
+    });
+    const recSec = document.getElementById('recommended-section');
+    if (recSec) recSec.style.display = 'block';
+}
+
+function resetDashboardView() {
+    const profileSec = document.getElementById('profile-section');
+    if (profileSec) profileSec.style.display = 'none';
+
+    const sectionsToShow = ['recommended-section', 'ats-section', 'interview-section'];
+    sectionsToShow.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = 'block';
+    });
+}
+
+
+function openNaukriModal() {
+    const modal = document.getElementById('naukriProfileModal');
+    if (modal) { modal.style.display = 'flex'; }
+
+    // Read-only parameters dynamic fill
+    const currentActiveEmail = document.getElementById('lblProfileEmail')?.innerText || localStorage.getItem("userEmail") || "";
+    if (document.getElementById('profileEmail')) {
+        document.getElementById('profileEmail').value = currentActiveEmail;
+    }
+    
+    const currentName = document.getElementById('lblProfileName')?.innerText || "";
+    if (document.getElementById('profileName')) {
+        document.getElementById('profileName').value = (currentName === "Add Educational, Profile Headline" || currentName === "Shruti Saste") ? currentName : currentName;
+    }
+
+    if (document.getElementById('profileExperience')) {
+        document.getElementById('profileExperience').value = document.getElementById('lblProfileExperience')?.innerText || "";
+    }
+
+    const currentLocation = document.getElementById('lblProfileLocation')?.innerText || "";
+    if (document.getElementById('profileLocation')) {
+        document.getElementById('profileLocation').value = currentLocation === "Add location" ? "" : currentLocation;
+    }
+
+    const currentPhone = document.getElementById('lblProfilePhone')?.innerText || "";
+    if (document.getElementById('profilePhone')) {
+        document.getElementById('profilePhone').value = currentPhone === "Add Phone" ? "" : currentPhone;
+    }
+
+    const currentLinkedin = document.getElementById('lblProfileLinkedin')?.innerText || "";
+    if (document.getElementById('profileLinkedin')) {
+        document.getElementById('profileLinkedin').value = currentLinkedin === "Add LinkedIn URL" ? "" : currentLinkedin;
+    }
+
+    if (document.getElementById('profileSkills')) {
+        document.getElementById('profileSkills').value = document.getElementById('lblProfileSkills')?.innerText || "";
+    }
+
+    if (document.getElementById('profileEducation')) {
+        document.getElementById('profileEducation').value = document.getElementById('lblProfileEducation')?.innerText || "";
+    }
+}
+
+function closeNaukriModal() {
+    const modal = document.getElementById('naukriProfileModal');
+    if (modal) modal.style.display = 'none';
+}
+
+function toggleLinkedInEditForm() {
+    const displayCard = document.getElementById('profileDisplayCard');
+    const editForm = document.getElementById('profileEditFormContainer');
+    const editBtn = document.getElementById('editProfileBtn');
+    if (!editForm || !displayCard) return;
+
+    if (editForm.style.display === 'none') {
+        editForm.style.display = 'block';
+        displayCard.style.display = 'none';
+        if (editBtn) {
+            editBtn.innerHTML = `<i class="fa-solid fa-xmark"></i> Close Editor`;
+            editBtn.style.background = '#7f1d1d';
+        }
+    } else {
+        editForm.style.display = 'none';
+        displayCard.style.display = 'block';
+        if (editBtn) {
+            editBtn.innerHTML = `<i class="fa-solid fa-pen"></i> Edit Profile`;
+            editBtn.style.background = '#1e293b';
+        }
+    }
+}
+
+function scrollToSection(sectionId) {
+    if (sectionId === 'profile-section') {
+        showProfileSection();
+    }
+    const element = document.getElementById(sectionId);
+    if (element) { 
+        element.scrollIntoView({ behavior: 'smooth', block: 'start' }); 
+    }
+}
+window.addEventListener('DOMContentLoaded', async () => {
+    // LocalStorage madhun token login email id ghetla
+    const loggedInEmail = localStorage.getItem("userEmail") || "shrutisaste9@gmail.com"; 
+    
+    // UI var direct dynamic primary identity push keli
+    if(document.getElementById('lblProfileEmail')) {
+        document.getElementById('lblProfileEmail').innerText = loggedInEmail;
+    }
+
+    console.log("🔍 Fetching data from Sheet via n8n for:", loggedInEmail);
+
+    try {
+        const response = await fetch('http://localhost:5678/webhook/get-profile', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: loggedInEmail })
+        });
+
+        if (!response.ok) throw new Error(`HTTP Error Status: ${response.status}`);
+
+        const rawData = await response.json();
+        console.log("📥 Raw Sheet Response Data:", rawData);
+
+        let userData = null;
+        
+        // Accurate array extraction parsing
+        if (Array.isArray(rawData) && rawData.length > 0) {
+            userData = rawData[0];
+        } else if (rawData && typeof rawData === 'object') {
+            userData = rawData.firstObject || rawData.data || rawData;
+            if (Array.isArray(userData)) { userData = userData[0]; }
+        }
+
+       
+        if (userData && Object.keys(userData).length > 0) {
+            console.log("🎯 Extracted Final Row Object:", userData);
+
+          
+            const finalName = userData.Name || userData.name || "Shruti Saste";
+            if (document.getElementById('lblProfileName')) document.getElementById('lblProfileName').innerText = finalName;
+            if (document.getElementById('welcomeName'))    document.getElementById('welcomeName').innerText = finalName;
+
+            if (document.getElementById('lblProfilePhone')) {
+                document.getElementById('lblProfilePhone').innerText = userData.Phone || userData.phone || "Add Phone";
+            }
+            if (document.getElementById('lblProfileLocation')) {
+                document.getElementById('lblProfileLocation').innerText = userData.Location || userData.location || "Add Location";
+            }
+            if (document.getElementById('lblProfileEducation')) {
+                document.getElementById('lblProfileEducation').innerText = userData.Education || userData.education || "Add Education";
+            }
+            if (document.getElementById('lblProfileExperience')) {
+                document.getElementById('lblProfileExperience').innerText = userData.Experience || userData.experience || "Fresher";
+            }
+            if (document.getElementById('lblProfileSkills')) {
+                document.getElementById('lblProfileSkills').innerText = userData.Skills || userData.skills || "Add Skills";
+            }
+            if (document.getElementById('lblProfileLinkedin')) {
+                const lnk = userData.Linkedin || userData.linkedin || "Add LinkedIn URL";
+                document.getElementById('lblProfileLinkedin').innerText = lnk;
+            }
+            console.log("🎉 All dashboard cards loaded successfully from Google Sheets!");
+        } else {
+            console.log("⚠️ No entry row found in spreadsheet for this email yet.");
+        }
+    } catch (error) {
+        console.error("❌ Auto loading pipeline failed:", error);
+    }
+});
+</script>
+</body>
+</html>

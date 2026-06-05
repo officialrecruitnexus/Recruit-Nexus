@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Candidate Dashboard</title>
+<link rel="stylesheet" href="dashboard.css">
+</head>
+<body>
+
+<h2>Welcome to Recruit Nexus Dashboard</h2>
+
+<h3>Available Jobs</h3>
+
+<ul id="jobList"></ul>
+
+<ul>
+<li>Software Developer <button onclick="applyJob('Software Developer')">Apply</button></li>
+<li>Web Designer <button onclick="applyJob('Web Designer')">Apply</button></li>
+<li>Data Analyst <button onclick="applyJob('Data Analyst')">Apply</button></li>
+<li>Frontend Developer <button onclick="applyJob('Frontend Developer')">Apply</button></li>
+<li>Backend Developer <button onclick="applyJob('Backend Developer')">Apply</button></li>
+<li>UI/UX Designer <button onclick="applyJob('UI/UX Designer')">Apply</button></li>
+<li>DevOps Engineer <button onclick="applyJob('DevOps Engineer')">Apply</button></li>
+</ul>
+
+<br>
+
+<ul>
+<li><a href="upload.html">Upload Resume</a></li>
+<li><a href="my-applications.html">My Applications</a></li>
+<li><a href="login.html">Logout</a></li>
+</ul>
+
+<script>
+let jobs = JSON.parse(localStorage.getItem("jobs")) || [];
+
+let list = document.getElementById("jobList");
+
+jobs.forEach(job => {
+    let li = document.createElement("li");
+
+    let btn = document.createElement("button");
+    btn.textContent = "Apply";
+    btn.onclick = function(){
+        applyJob(job);
+    };
+
+    li.textContent = job + " ";
+    li.appendChild(btn);
+
+    list.appendChild(li);
+});
+</script>
+</body>
+</html>

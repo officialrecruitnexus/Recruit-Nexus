@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>My Applications</title>
+<link rel="stylesheet" href="dashboard.css">
+</head>
+
+<body class="my-applications">
+
+<h2>My Applications</h2>
+
+<div class="app-container">
+<ul id="applications"></ul>
+</div>
+
+<div class="links">
+    <a href="jobseeker-dashboard.html">Back</a>
+</div>
+
+<script>
+let apps = JSON.parse(localStorage.getItem("applications")) || [];
+
+let list = document.getElementById("applications");
+
+function displayApps(){
+    list.innerHTML = "";
+
+    apps.forEach((job,index) => {
+        let li = document.createElement("li");
+
+        let btn = document.createElement("button");
+        btn.textContent = "Remove";
+        btn.onclick = function(){
+            removeJob(index);
+        };
+
+        li.textContent = job + " ";
+        li.appendChild(btn);
+
+        list.appendChild(li);
+    });
+}
+
+function removeJob(index){
+    apps.splice(index,1);
+    localStorage.setItem("applications", JSON.stringify(apps));
+    displayApps();
+}
+
+displayApps();
+</script>
+
+</body>
+</html>

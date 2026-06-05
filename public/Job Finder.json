@@ -1,0 +1,318 @@
+{
+  "name": "Job Finder",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Recruit Nexus",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Job Title",
+              "fieldName": "Job Title"
+            },
+            {
+              "fieldLabel": "Enter Location",
+              "fieldName": "Location"
+            },
+            {
+              "fieldLabel": "Upload Resume",
+              "fieldType": "file",
+              "fieldName": "Resume"
+            },
+            {
+              "fieldLabel": "Email Address",
+              "fieldType": "email"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.5,
+      "position": [
+        -80,
+        0
+      ],
+      "id": "b9fa6617-1a75-4698-9c41-2fbb50ffacd7",
+      "name": "On form submission",
+      "webhookId": "71afedaa-4d38-4000-879b-0d610579d254"
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "binaryPropertyName": "Resume",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        416,
+        0
+      ],
+      "id": "78e8b8b7-e606-4136-a616-dfc6fd62eab8",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "promptType": "=define",
+        "text": "=Analyze this Resume Data: {{ $json.text }}. Job Title: {{ $json[\"Job Title\"] }}. Location: {{ $json.Location }}. Suggest 3 specific job roles with LinkedIn search links. Strictly no resume content in output.",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        624,
+        0
+      ],
+      "id": "8ff78de8-2d71-46ff-ad3f-ba8df4e2ec21",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        640,
+        176
+      ],
+      "id": "8cd2af29-2533-42bb-b904-d74bbe16b34c",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "stpRV81sZEXsiW9r",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1jsawfzkpp-OT9--tQOnkgr1zxOWabqaPnfKsGSBnN2M",
+          "mode": "list",
+          "cachedResultName": "Analysis Sheet",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1jsawfzkpp-OT9--tQOnkgr1zxOWabqaPnfKsGSBnN2M/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1jsawfzkpp-OT9--tQOnkgr1zxOWabqaPnfKsGSBnN2M/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Name": "=",
+            "Location": "={{ $('On form submission').item.json.Location }}",
+            "Job Title": "={{ $('On form submission').item.json[\"Job Title\"] }}",
+            "AI Analysis": "={{ $json.text }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Location",
+              "displayName": "Location",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Job Title",
+              "displayName": "Job Title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "AI Analysis",
+              "displayName": "AI Analysis",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        992,
+        0
+      ],
+      "id": "3b2e043f-c6ef-46dc-b569-e04e64279a48",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "KCm3lpJGttWsjlDS",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "=={{ $json[\"Email Address\"] }}",
+        "subject": "Recruit Nexus: Your Career Analysis Report",
+        "message": "=<p>Hello,</p>\n\n<p>Based on your profile analysis, here are the best <b>job and internship opportunities</b> for you:</p>\n\n<div style=\"background-color: #f4f4f4; padding: 15px; border-radius: 8px; border-left: 5px solid #2ecc71;\">\n  {{ $('Basic LLM Chain').item.json.text }}\n</div>\n\n<p>You can click on the links above to apply directly. We wish you all the best for your career!</p>\n\n<p>Regards,<br>\n<b>Recruit Nexus Team</b></p>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1216,
+        0
+      ],
+      "id": "fd9465e5-8947-4cb2-a8ee-7631f2135f0d",
+      "name": "Send a message",
+      "webhookId": "d8df8bb9-42bd-4985-b85a-ff3e6b04cbbf",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "xAorx7UGBAl3pt0E",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "submit-resume",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -80,
+        160
+      ],
+      "id": "50c51de4-b929-43ae-9b40-0f504b2b62f0",
+      "name": "Webhook",
+      "webhookId": "6aa69c5d-e24b-4449-965e-5db6edf84e35"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        192,
+        0
+      ],
+      "id": "7c9c472b-d270-4cb7-bf56-dbdaa8299cce",
+      "name": "Merge"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "ae346de3-bddb-4687-8e91-1694eee87820",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "d13ee04816c83e3b6277d8f5a26fc008b43f5a23155573cddad7445c1d1706c8"
+  },
+  "id": "hY1AG5oZFPLg4yCT",
+  "tags": []
+}

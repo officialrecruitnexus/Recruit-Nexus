@@ -1,0 +1,192 @@
+.dashboard-page {
+    margin: 0;
+    font-family: Arial;
+    background: linear-gradient(to right, #4facfe, #00f2fe);
+    min-height: 100vh;
+}
+
+.dashboard-page h2 {
+    text-align: center;
+    color: white;
+    padding: 20px;
+}
+
+.dashboard-page h3 {
+    text-align: center;
+}
+
+.dashboard-page ul {
+    list-style: none;
+    width: 40%;
+    margin: auto;
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+}
+
+.dashboard-page ul li {
+    padding: 12px;
+    margin: 10px 0;
+    background: #f2f2f2;
+    border-radius: 6px;
+    display: flex;
+    justify-content: space-between;
+}
+
+.dashboard-page button {
+    background: #4facfe;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 5px;
+}
+
+.links {
+    text-align: center;
+    margin-top: 20px;
+}
+
+.links a {
+    text-decoration: none;
+    background: black;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 5px;
+    margin: 8px;
+    display: inline-block;
+}
+
+.dashboard-page .container{
+    width:40%;
+    margin:auto;
+    background:white;
+    padding:20px;
+    border-radius:10px;
+}
+
+.dashboard-page .add-job{
+    display:flex;
+    justify-content:space-between;
+    margin-bottom:20px;
+}
+
+.dashboard-page input{
+    width:70%;
+    padding:8px;
+}
+/* My Applications Page */
+.my-applications {
+    margin: 0;
+    font-family: Arial;
+    background: linear-gradient(to right, #4facfe, #00f2fe);
+    min-height: 100vh;
+}
+
+.my-applications h2 {
+    text-align: center;
+    color: white;
+    padding: 20px;
+}
+
+.app-container {
+    width: 40%;
+    margin: auto;
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+}
+
+.app-container ul {
+    list-style: none;
+    padding: 0;
+}
+
+.app-container li {
+    padding: 12px;
+    margin: 10px 0;
+    background: #f2f2f2;
+    border-radius: 6px;
+    display: flex;
+    justify-content: space-between;
+}
+
+.app-container button {
+    background: #ff4d4d;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.back-btn {
+    display: block;
+    margin: 20px auto;
+    background: black;
+    color: white;
+    padding: 10px 15px;
+    border-radius: 6px;
+    text-align: center;
+    width: 120px;
+    text-decoration: none;
+}
+
+/* Recruiter Dashboard */
+.recruiter-page {
+    margin: 0;
+    font-family: Arial;
+    background: linear-gradient(to right, #4facfe, #00f2fe);
+    min-height: 100vh;
+}
+
+.recruiter-page h2 {
+    text-align: center;
+    color: white;
+    padding: 20px;
+}
+
+.recruiter-container {
+    width: 40%;
+    margin: auto;
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+}
+
+.recruiter-container ul {
+    list-style: none;
+    padding: 0;
+}
+
+.recruiter-container li {
+    padding: 12px;
+    margin: 10px 0;
+    background: #f2f2f2;
+    border-radius: 6px;
+    display: flex;
+    justify-content: space-between;
+}
+
+.recruiter-container button {
+    background: #ff4d4d;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 5px;
+}
+
+.add-job-box {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+.add-job-box input {
+    width: 70%;
+    padding: 8px;
+}
+
+.add-job-box button {
+    background: #4facfe;
+    color: white;
+}

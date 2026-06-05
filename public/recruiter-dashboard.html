@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="mr">
+<head>
+    <meta charset="UTF-8">
+    <title>Recruiter Dashboard | Recruit Nexus</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="data:,">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> 
+    <style>
+        .job-card { 
+            border: 1px solid rgba(255, 255, 255, 0.1); 
+            padding: 20px; 
+            margin: 15px 0; 
+            border-radius: 12px; 
+            background: rgba(255, 255, 255, 0.05); 
+            backdrop-filter: blur(10px); 
+            color: white; 
+            border-left: 5px solid #3498db;
+        }
+        .sync-status { color: #00ff88; font-size: 0.8em; display: none; }
+        .btn-schedule { background:#007bff; color:white; border:none; padding:8px 15px; cursor:pointer; border-radius:6px; margin-right:5px; font-weight: bold; }
+        .btn-view { background:#6c757d; color:white; border:none; padding:8px 15px; cursor:pointer; border-radius:6px; margin-right:5px; font-weight: bold; }
+        .btn-delete { background:#ff4444; color:white; border:none; padding:8px 15px; cursor:pointer; border-radius:6px; }
+        .btn-results { background:#e67e22; color:white; border:none; padding:8px 15px; cursor:pointer; border-radius:6px; margin-right:5px; font-weight: bold; }
+        
+        .stats-container { display: flex; justify-content: space-between; gap: 15px; margin-bottom: 30px; }
+        .stat-card { flex: 1; background: rgba(0, 0, 0, 0.3); padding: 15px; border-radius: 12px; text-align: center; border: 1px solid rgba(255, 255, 255, 0.1); }
+        .stat-card h4 { font-size: 1.8rem; margin: 0; color: #3498db; }
+
+        /* Modal & Scroll Fix */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); backdrop-filter: blur(10px); z-index: 1000; justify-content: center; align-items: center; }
+        .modal-content { background: #1a1a1a; border: 1px solid #444; width: 90%; max-width: 850px; max-height: 85vh; border-radius: 15px; padding: 25px; color: white; display: flex; flex-direction: column; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding-bottom: 15px; }
+        .modal-body { overflow-y: auto; margin-top: 15px; scrollbar-width: thin; scrollbar-color: #3498db #1a1a1a; }
+        
+        .applicants-table { width: 100%; border-collapse: collapse; table-layout: fixed; margin-bottom: 20px; }
+        .applicants-table th, .applicants-table td { padding: 12px; text-align: left; border-bottom: 1px solid #333; word-wrap: break-word; }
+        .applicants-table th { color: #3498db; }
+        .close-btn { background: none; border: none; color: white; font-size: 28px; cursor: pointer; }
+        .btn-listen { color: #00ff88; text-decoration: none; font-weight: bold; }
+
+        .btn-action-schedule {
+            background: #00ff88; 
+            color: black; 
+            border: none; 
+            padding: 6px 14px; 
+            border-radius: 4px; 
+            cursor: pointer; 
+            font-weight: bold; 
+            transition: 0.2s;
+        }
+        .btn-action-schedule:hover {
+            background: #00cc6a;
+            transform: scale(1.05);
+        }
+        div a[href*="docs.google.com"]:hover {
+    background: #219653 !important;
+    transform: scale(1.03);
+    box-shadow: 0 4px 15px rgba(39, 174, 96, 0.4);
+}
+    </style>
+</head>
+
+<body class="recruiter-page">
+<div class="container">
+    <h2>🚀 Recruit Nexus Dashboard</h2>
+
+    <div class="stats-container">
+        <div class="stat-card">
+            <h4 id="totalPostings">0</h4>
+            <p style="color: white; opacity: 0.8;">Active Jobs</p>
+        </div>
+        <div class="stat-card">
+            <h4 id="manualCount">--</h4>
+            <p style="color: white; opacity: 0.8;">Sheet Sync Status</p>
+        </div>
+    </div>
+
+    <div class="add-job">
+        <h2 style="color: white; margin-bottom: 10px;"> 🔍Add New Vacancy</h2>
+        
+        <div class="form-row">
+            <input type="text" id="jobTitle" placeholder="Job Title (e.g. Software Engineer)">
+            <input type="text" id="jobDept" placeholder="Department (e.g. IT / HR)">
+            <input type="text" id="jobRole" placeholder="Role (e.g. Backend Dev)">
+        </div>
+
+        <div class="form-row">
+            <input type="text" id="jobLocation" placeholder="📍 Location (e.g. Pune / Remote)">
+            <input type="text" id="jobExp" placeholder="💼 Experience (e.g. 2-5 Years)">
+            <input type="text" id="jobPackage" placeholder="💰 Package (e.g. 8-12 LPA)">
+        </div>
+
+        <textarea id="jobDesc" placeholder="📝 Detailed Requirements & Job Description..."></textarea>
+        
+        <button onclick="addJob()">Post Job & Sync Automation</button>
+    </div>
+
+    <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin: 30px 0;">
+    
+    <h3>Active Postings</h3>
+    <ul id="jobList" style="list-style: none; padding: 0;"></ul>
+
+    <div class="links" style="margin-top: 30px;">
+        <a href="Home Page.html" style="color: white; text-decoration: none; border: 1px solid white; padding: 10px 20px; border-radius: 20px;">Logout</a>
+    </div>
+</div>
+
+<div id="applicantsModal" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Management: <span id="modalJobTitle" style="color: #3498db;"></span></h3>
+            <button class="close-btn" onclick="closeModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <h4 style="color: #00ff88;">1. New Applicants</h4>
+            <table class="applicants-table">
+                <thead>
+                    <tr>
+                        <th style="width: 25%;">Name</th>
+                        <th style="width: 30%;">Email</th>
+                        <th style="width: 30%;">AI Analysis</th>
+                        <th style="width: 15%;">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="applicantsList"></tbody>
+            </table>
+            
+            <div id="interviewResultsSection" style="margin-top: 20px; border-top: 2px solid #333; padding-top: 20px;">
+                <h4 style="color: #e67e22;">2. AI Interview Results</h4>
+                <table class="applicants-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 25%;">Candidate</th>
+                            <th style="width: 55%;">Interview Summary</th>
+                            <th style="width: 20%;">Recording</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recruiterTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script>
+    const FETCH_APPLICANTS_URL = "https://3dzqxw2k-5678.inc1.devtunnels.ms/webhook/get-applicants";
+    const JOB_WEBHOOK = "https://3dzqxw2k-5678.inc1.devtunnels.ms/webhook-test/Job%20Application";
+    const INTERVIEW_DATA_URL = 'https://3dzqxw2k-5678.inc1.devtunnels.ms/webhook/vapi-interview-data';
+    const EMAIL_WEBHOOK_URL = "http://localhost:5678/webhook-test/vapi-results"; 
+
+    let jobs = JSON.parse(localStorage.getItem("jobs")) || [];
+
+    async function checkSheetSync() {
+        try {
+            const res = await fetch(FETCH_APPLICANTS_URL);
+            if(res.ok) {
+                document.getElementById("manualCount").innerText = "LIVE";
+                document.getElementById("manualCount").style.color = "#00ff88";
+            }
+        } catch(e) {
+            document.getElementById("manualCount").innerText = "OFFLINE";
+            document.getElementById("manualCount").style.color = "#ff4444";
+        }
+    }
+    checkSheetSync();
+
+    function displayJobs() {
+    let list = document.getElementById("jobList");
+    let totalDisplay = document.getElementById("totalPostings");
+    list.innerHTML = "";
+    totalDisplay.innerText = jobs.length;
+
+    jobs.forEach((job, index) => {
+        let li = document.createElement("li");
+        li.className = "job-card";
+        li.innerHTML = `
+          
+            <strong style="font-size: 1.3rem; color: #3498db;">${job.title}</strong> <br>
+            <small style="opacity: 0.7;">Dept: ${job.dept} | ID: ${job.id} | Role: ${job.role || 'N/A'}</small> <br>
+            
+            
+            <div style="margin-top: 8px; font-size: 0.9em; display: flex; gap: 15px; opacity: 0.9; flex-wrap: wrap;">
+                <span>📍 ${job.location || 'Not Specified'}</span>
+                <span>💼 ${job.exp || 'Not Specified'}</span>
+                <span>💰 ${job.salary || 'Not Specified'}</span>
+            </div>
+
+           
+            <p style="margin-top: 10px; font-size: 0.9em; color: #ccc; line-height: 1.4; white-space: pre-line;">
+                <strong>📝 Description:</strong><br>${job.desc || 'No description provided.'}
+            </p>
+            
+            <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin: 12px 0;">
+
+            
+            <div style="display: flex; flex-direction: row; align-items: center; justify-content: flex-start; gap: 8px; width: 100%; white-space: nowrap;">
+                <button onclick="openApplicants('${job.title}')" class="btn-view" style="margin: 0;">View Applicants</button>
+              
+                
+                
+                <a href="https://docs.google.com/spreadsheets/d/1n8LYCwGyZQ8ZDF6lvUzpCeIFMSbwaot-vuJpuLltsRs/edit?usp=sharing" target="_blank" style="background:#27ae60; color:white; text-decoration:none; padding:8px 15px; border-radius:6px; font-weight: bold; font-size: 13.333px; display: inline-flex; align-items: center; margin: 0; box-sizing: border-box; height: 35px;">
+                    Open Sheet 📊
+                </a>
+                
+                <button onclick="removeJob(${index})" class="btn-delete" style="margin: 0;">Remove</button>
+            </div>
+        `;
+        list.appendChild(li);
+    });
+}
+
+    async function openApplicants(jobTitle) {
+        const modal = document.getElementById("applicantsModal");
+        const list = document.getElementById("applicantsList");
+        document.getElementById("modalJobTitle").innerText = jobTitle;
+        
+        list.innerHTML = `<tr><td colspan="4" style="text-align:center;">Fetching Live Data...</td></tr>`;
+        modal.style.display = "flex";
+
+        if (typeof loadInterviews === "function") {
+            loadInterviews();
+        }
+
+        try {
+            const response = await fetch(FETCH_APPLICANTS_URL);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const textData = await response.text(); 
+            
+            if (!textData || textData.trim() === "" || textData === "[]") {
+                list.innerHTML = `<tr><td colspan="4" style="text-align:center;">No applicants found (Sheet is empty).</td></tr>`;
+                return;
+            }
+
+            const data = JSON.parse(textData);
+            console.log("Data From Sheet :", data);
+            
+            const dataArray = Array.isArray(data) ? data : [data];
+
+            const filtered = dataArray.filter(app => {
+                const sheetJob = (app["Job Title"] || app.JobTitle || app.title || app.job || "").toString().toLowerCase().trim();
+                return sheetJob === jobTitle.toLowerCase().trim();
+            });
+
+            if (filtered.length === 0) {
+                list.innerHTML = `<tr><td colspan="4" style="text-align:center;">No applicants found for this job.</td></tr>`;
+            } else {
+                
+                list.innerHTML = filtered.map(app => {
+                    const appEmail = app.Email || app["Email Address"] || app.email || '';
+                    const appName = app.Name || app.name || 'Candidate';
+                    const currentJob = jobTitle;
+                    const analysisText = app["Result/Score"] || app.Score || app["AI Analysis"] || app.Analysis || app.score || 'Verified ✓';
+
+                    return `
+                        <tr>
+                            <td style="color: white; font-weight: bold;">${appName}</td>
+                            <td>${appEmail}</td>
+                            <td style="font-size: 0.85em; color: #3498db;">${analysisText}</td>
+                            <td>
+                                <button onclick="sendInterviewMail('${appEmail}', '${appName}', '${currentJob}')" class="btn-action-schedule">
+                                    Schedule 📅
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+        } catch (err) {
+            console.error("Fetch Error:", err);
+            list.innerHTML = `<tr><td colspan="4" style="color:red; text-align:center;">Live Connection Failed (JSON Error).</td></tr>`;
+        }
+    }
+    async function sendInterviewMail(email, name, job) {
+    if (!email || email.trim() === "" || email === 'N/A') {
+        alert("This candidate's email ID was not found!");
+        return;
+    }
+
+    if (!confirm(`Are you sure you want to send an invitation email to candidate ${name} (${email}) for an interview at '${job}' ?`)) {
+        return;
+    }
+
+    try {
+        const response = await fetch(EMAIL_WEBHOOK_URL, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                candidateEmail: email,
+                candidateName: name,
+                jobTitle: job
+            })
+        });
+
+       
+        if (response.ok) {
+            alert(`Email has been successfully send to ${name} 🚀`);
+        } else {
+            alert("The email has not been sent. Make sure that the n8n workflow is running or that it is Active");
+        }
+    } catch (error) {
+        console.error("Email Error:", error);
+        alert("Check if the local server is running.");
+    }
+}
+
+    async function loadInterviews() {
+        const tableBody = document.getElementById('recruiterTableBody');
+        if (!tableBody) return;
+
+        try {
+            const response = await fetch(INTERVIEW_DATA_URL);
+            const text = await response.text();
+            
+            if (!text || text.trim() === "") {
+                tableBody.innerHTML = `<tr><td colspan="3" style="text-align:center;">No interview data yet.</td></tr>`;
+                return;
+            }
+
+            const data = JSON.parse(text);
+            tableBody.innerHTML = ''; 
+            const items = Array.isArray(data) ? data : [data];
+            
+            items.forEach(item => {
+                const name = item["Candidate Name"] || item["Name"] || item["name"] || item["candidateName"] || item["candidate_name"] || item["candidate"] || 'N/A';
+                const summary = item["Summary"] || item["Interview Summary"] || 'No Summary Available';
+                const recording = item["Recording URL"] || item["Recording"] || '#';
+
+                tableBody.innerHTML += `
+                    <tr>
+                        <td style="color: white; font-weight: bold;">${name}</td>
+                        <td style="font-size: 0.85em; color: #ccc;">${summary}</td>
+                        <td>
+                            <a href="${recording}" target="_blank" style="color: #00ff88; text-decoration: none; font-weight: bold;">
+                                Play Recording 🎙️
+                            </a>
+                        </td>
+                    </tr>`;
+            });
+        } catch (error) {
+            tableBody.innerHTML = `<tr><td colspan="3" style="color:gray; text-align:center;">Interview results pending...</td></tr>`;
+        }
+    }
+
+    async function addJob() {
+        let title = document.getElementById("jobTitle").value;
+        let dept = document.getElementById("jobDept").value;
+        let role = document.getElementById("jobRole").value;
+        let location = document.getElementById("jobLocation").value;
+        let exp = document.getElementById("jobExp").value;
+        let salary = document.getElementById("jobPackage").value;
+        let desc = document.getElementById("jobDesc").value;
+
+        if (title && dept) {
+            const newJob = { 
+                id: "RN-" + Math.floor(Math.random() * 1000), 
+                title, 
+                dept,
+                role,
+                location,
+                exp,
+                salary,
+                desc
+            };
+            
+            jobs.push(newJob);
+            localStorage.setItem("jobs", JSON.stringify(jobs));
+            displayJobs();
+            
+            try {
+                await fetch(JOB_WEBHOOK, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(newJob)
+                });
+            } catch (e) { console.log("Sync failed."); }
+
+            document.getElementById("jobTitle").value = "";
+            document.getElementById("jobDept").value = "";
+            document.getElementById("jobRole").value = "";
+            document.getElementById("jobLocation").value = "";
+            document.getElementById("jobExp").value = "";
+            document.getElementById("jobPackage").value = "";
+            document.getElementById("jobDesc").value = "";
+        } else {
+            alert("Please fill Job Title and Department ");
+        }
+    }
+
+    function scheduleAIInterview(job) {
+        alert(job + " The Interview link will be sent via Email.");
+    }
+
+    function removeJob(index) {
+        if(confirm("Removed?")) {
+            jobs.splice(index, 1);
+            localStorage.setItem("jobs", JSON.stringify(jobs));
+            displayJobs();
+        }
+    }
+
+    function closeModal() {
+        document.getElementById("applicantsModal").style.display = "none";
+    }
+
+    displayJobs();
+    function viewAiReport(email) {
+   
+    window.location.href = `ai-analysis.html?email=${encodeURIComponent(email)}`;
+}
+</script>
+</body>
+</html>

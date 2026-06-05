@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="style.css">
+<title>Job Listings</title>
+</head>
+<body class="job-page">
+
+<h2>Available Jobs</h2>
+
+<ul>
+<li><ul>
+<li>Software Developer <button onclick="applyJob('Software Developer')">Apply</button></li>
+<li>Web Designer <button onclick="applyJob('Web Designer')">Apply</button></li>
+<li>Data Analyst <button onclick="applyJob('Data Analyst')">Apply</button></li>
+<li>Frontend Developer <button onclick="applyJob('Frontend Developer')">Apply</button></li>
+<li>Backend Developer <button onclick="applyJob('Backend Developer')">Apply</button></li>
+<li>UI/UX Designer <button onclick="applyJob('UI/UX Designer')">Apply</button></li>
+<li>DevOps Engineer <button onclick="applyJob('DevOps Engineer')">Apply</button></li>
+</ul>
+
+<br>
+<a href="dashboard.html">Back to Dashboard</a>
+<script>
+function applyJob(job){
+    let applications = JSON.parse(localStorage.getItem("applications")) || [];
+
+    applications.push(job);
+
+    localStorage.setItem("applications", JSON.stringify(applications));
+
+    alert("Applied for " + job);
+}
+</script>
+
+</body>
+</html>

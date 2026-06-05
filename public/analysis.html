@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>AI Resume Analysis</title>
+<style>
+body{
+font-family:Arial;
+background: linear-gradient(to right,#4facfe,#00f2fe);
+margin:0;
+}
+
+.container{
+width:40%;
+margin:100px auto;
+background:white;
+padding:30px;
+border-radius:10px;
+text-align:center;
+}
+
+button{
+display:inline-block;
+margin-top:20px;
+background:#4facfe;
+color:white;
+padding:10px 15px;
+border:none;
+border-radius:5px;
+cursor:pointer;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h2>AI Resume Analysis</h2>
+
+<b>Skills Found:</b> <span id="skills"></span>
+<br><br>
+
+<b>Top Skill:</b> <span id="skill"></span>
+
+<br><br>
+
+<button onclick="openLinkedIn()">View LinkedIn Jobs</button>
+
+<br><br>
+
+<button onclick="location.href='/jobseeker-dashboard.html'">
+Back to Dashboard
+</button>
+
+</div>
+
+<script>
+const params = new URLSearchParams(window.location.search);
+
+const skills = params.get("skills") || "Not detected";
+const skill = params.get("skill") || "software developer";
+
+document.getElementById("skills").textContent = skills;
+document.getElementById("skill").textContent = skill;
+
+function openLinkedIn(){
+window.open(
+"https://www.linkedin.com/jobs/search/?keywords=" + encodeURIComponent(skill),
+"_blank"
+);
+}
+</script>
+
+</body>
+</html>

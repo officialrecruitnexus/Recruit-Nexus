@@ -1,0 +1,451 @@
+{
+  "name": "Recruiter Automation",
+  "nodes": [
+    {
+      "parameters": {
+        "operation": "pdf",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        208,
+        0
+      ],
+      "id": "327c7666-4d0e-485a-b8d8-e98abb6ec3ae",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Analyze the resume text: {{ $node[\"Extract from File\"].json[\"text\"] }}\nJob Role: {{ $node[\"On form submission\"].json[\"Applying for Position\"] }}\nTask: Give a matching score out of 100.\n\"Strictly format the output as: Skill Gap: [missing skills], Recommended Course: [course name]\"",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        416,
+        0
+      ],
+      "id": "de8be5fc-89bb-4277-ac29-e09f67bc0ef8",
+      "name": "Basic LLM Chain",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        352,
+        208
+      ],
+      "id": "640d25a3-ade2-4479-b26d-5a1fb53ee470",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "6sqiOSj3wRMgmiLd",
+          "name": "Google Gemini(PaLM) Api for Recruiter"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "formTitle": "Recruit Nexus - Submit Resume",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Candidate Name"
+            },
+            {
+              "fieldLabel": "Email Address",
+              "fieldType": "email"
+            },
+            {
+              "fieldLabel": "Applying for Position"
+            },
+            {
+              "fieldLabel": "Upload Resume",
+              "fieldType": "file",
+              "fieldName": "data",
+              "acceptFileTypes": ".pdf",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.5,
+      "position": [
+        0,
+        0
+      ],
+      "id": "1adb9fb7-03bf-4a69-9a68-c4d3ddcdd252",
+      "name": "On form submission",
+      "webhookId": "1d60e5dc-583f-4c2f-836f-8827cef76eb2"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "=1m_ZEYx30wKthx9cXdKsaBSsHovrNO2bexScpoqflPBg",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "id",
+          "value": "=gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Name": "={{ $node[\"On form submission\"].json[\"Candidate Name\"] }}",
+            "Email ": "={{ $node['On form submission'].json['Email Address'] }}",
+            "Result/Score": "={{ $node[\"Basic LLM Chain\"].json[\"text\"] }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Email ",
+              "displayName": "Email ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Result/Score",
+              "displayName": "Result/Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        768,
+        0
+      ],
+      "id": "28561177-0be9-4130-8dd5-9e7b484df6b5",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Il6Sht7cCrInkO3V",
+          "name": "Google Sheets account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('On form submission').item.json['Email Address'] }}",
+        "subject": "Application Update: Your Resume Analysis Result",
+        "message": "=<p>Hi <b>{{ $node[\"On form submission\"].json[\"Candidate Name\"] }}</b>,</p>\n\n<p>Thank you for applying for the <b>{{ $node[\"On form submission\"].json[\"Applying for Position\"] }}</b> role at <b>Recruit Nexus</b>.</p>\n\n<p><b>Your Evaluation Result:</b><br>\n{{ $node[\"Basic LLM Chain\"].json[\"text\"] }}</p>\n\n<p>Best regards,<br>\n<b>Recruit Nexus Team</b></p>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        992,
+        -240
+      ],
+      "id": "9823ba1d-279b-44ec-abe9-28f26e79de90",
+      "name": "Send a message",
+      "webhookId": "b2df1e9f-fd74-487d-923b-bb389b2ead44",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "xAorx7UGBAl3pt0E",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "305e269c-664a-4e4d-a0ac-24c7eadc73ad",
+              "leftValue": "={{ $node[\"Basic LLM Chain\"].json[\"text\"].match(/\\d+/)[0] }}",
+              "rightValue": 80,
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1184,
+        0
+      ],
+      "id": "eedf1a9e-783d-424d-9ee4-f83911530164",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "value": "shrutisaste9@gmail.com",
+          "mode": "list",
+          "cachedResultName": "shrutisaste9@gmail.com"
+        },
+        "start": "={{ $now.plus({ days: 2 }).set({ hour: 11, minute: 0 }).toISO() }}",
+        "end": "={{ $now.plus({ days: 2 }).set({ hour: 12, minute: 0 }).toISO() }}",
+        "additionalFields": {
+          "conferenceDataUi": {
+            "conferenceDataValues": {
+              "conferenceSolution": "hangoutsMeet"
+            }
+          },
+          "summary": "=Interview: {{ $node[\"On form submission\"].json[\"Candidate Name\"] }}"
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        1392,
+        -96
+      ],
+      "id": "c8ed145a-1c20-4037-8d2f-cc21017ee28f",
+      "name": "Create an event",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "gce3HTp36aKxWjYA",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('On form submission').item.json['Email Address'] }}",
+        "subject": "=Interview Invitation: {{ $node[\"On form submission\"].json[\"Candidate Name\"] }}",
+        "message": "=Hi {{ $node[\"On form submission\"].json[\"Candidate Name\"] }}, \n<p>Thank you for applying for the <b>{{ $node[\"On form submission\"].json[\"Applying for Position\"] }}</b> role at <b>Recruit Nexus</b>.</p>\nYour interview is scheduled for {{ $node[\"Create an event\"].json[\"start\"][\"dateTime\"].split('T')[0] }}. \n\nJoin Google Meet: {{ $node[\"Create an event\"].json[\"hangoutLink\"] }}\n\nPlease check your Google Calendar to accept the invite. \n\nBest regards, \nRecruit Nexus Team",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1552,
+        -96
+      ],
+      "id": "704e4b8d-2364-44b0-9afd-3394b5efecb4",
+      "name": "Send a message1",
+      "webhookId": "ba1ecaac-17e8-47a1-b87c-d672d4005335",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "xAorx7UGBAl3pt0E",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('On form submission').item.json['Email Address'] }}",
+        "subject": "=Feedback on your application: {{ $node[\"On form submission\"].json[\"Applying for Position\"] }}",
+        "message": "=Hi {{ $node[\"On form submission\"].json[\"Candidate Name\"] }},  Thank you for applying for the {{ $node[\"On form submission\"].json[\"Applying for Position\"] }} role at Recruit Nexus.  After analyzing your profile, our AI suggests that you need to work on certain skills to match this role's requirements.  Identified Skill Gaps: {{ $node[\"Basic LLM Chain\"].json[\"text\"].split('Skill Gap:')[1].split('Recommended Course:')[0] }}  Recommended Learning: {{ $node[\"Basic LLM Chain\"].json[\"text\"].split('Recommended Course:')[1] }}  We encourage you to upskill and apply again in the future!  Best regards, Recruit Nexus Team",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1392,
+        96
+      ],
+      "id": "1ca2c9da-3acd-4109-9c2d-01f24500db7c",
+      "name": "Send a message2",
+      "webhookId": "f5925317-39d9-4594-a9ef-eac887047ceb",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "xAorx7UGBAl3pt0E",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "Job Application",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -32,
+        176
+      ],
+      "id": "82b32c4c-5770-4308-ab3d-8dfab5eb0d0c",
+      "name": "Webhook",
+      "webhookId": "0a51c7ad-7f5d-458c-a543-6d1b0f05ce17"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "4df31ad4-fdf3-472d-8cbb-c872a4d5857c",
+              "name": "Name",
+              "value": "={{ $json.candidate_name || $node[\"On form submission\"].json[\"Candidate Name\"] }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        176,
+        176
+      ],
+      "id": "22aa495e-74bb-4535-a2ee-0f41061b93d3",
+      "name": "Edit Fields"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message": {
+      "main": [
+        []
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Create an event",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a message2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create an event": {
+      "main": [
+        [
+          {
+            "node": "Send a message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "ba62747a-11e6-4c25-bf1c-17be6213635d",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "d13ee04816c83e3b6277d8f5a26fc008b43f5a23155573cddad7445c1d1706c8"
+  },
+  "id": "qAeooZnGsB0FtYPM",
+  "tags": []
+}

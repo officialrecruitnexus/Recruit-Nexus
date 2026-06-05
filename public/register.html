@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register | Recruit Nexus</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body.register-page {
+            width: 100% !important;
+            height: 100vh !important;
+            display: flex !important;
+            justify-content: center !important; 
+            align-items: center !important;     
+            background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), 
+                        url('Background.jpg') !important; 
+            background-size: cover !important;
+            background-position: center !important;
+            background-attachment: fixed !important;
+            overflow: hidden;
+        }
+
+        .apply-card {
+            background: rgba(255, 255, 255, 0.1) !important;
+            backdrop-filter: blur(15px) !important;
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.2) !important;
+            border-radius: 20px;
+            padding: 40px;
+            width: 400px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+            text-align: center;
+            color: white;
+            position: relative !important;
+            z-index: 10;
+        }
+
+        .apply-card h2 { margin-bottom: 5px; font-size: 26px; }
+        .apply-card h2 span { color: #28a745; }
+        .subtitle { color: #ccc; font-size: 14px; margin-bottom: 25px; }
+
+        .input-group { text-align: left; margin-bottom: 15px; }
+        .input-group label { display: block; color: #28a745; font-size: 13px; margin-bottom: 5px; }
+
+        .modern-input {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 12px;
+            border-radius: 10px;
+            color: white;
+            outline: none;
+        }
+
+        .apply-btn {
+            width: 100%;
+            background: #28a745;
+            color: white;
+            padding: 13px;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        #success-screen {
+            display: none; 
+            padding: 20px 0;
+        }
+
+        .success-icon {
+            font-size: 60px;
+            color: #28a745;
+            margin-bottom: 15px;
+        }
+
+        .timer-text {
+            font-size: 18px;
+            color: #28a745;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body class="register-page">
+
+    <div class="apply-card">
+        <div id="success-screen">
+            <div class="success-icon">✔</div>
+            <h2>Registration <span>Successful!</span></h2>
+            <p style="margin-top: 15px; color: #ccc;">Redirecting to Login page in</p>
+            <p class="timer-text"><span id="countdown">5</span> Seconds</p>
+        </div>
+
+        <div id="form-content">
+            <h2>Recruit <span>Nexus</span></h2>
+            <p class="subtitle">Create an account to start your journey</p>
+
+            <form id="registrationForm">
+                <div class="input-group">
+                    <label>Full Name</label>
+                    <input type="text" id="regName" class="modern-input" placeholder="Enter your name" required>
+                </div>
+
+                <div class="input-group">
+    <label>Email Address</label>
+    <input 
+        type="email" 
+        id="regEmail" 
+        class="modern-input" 
+        placeholder="example@gmail.com" 
+        required
+        pattern="^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
+        title="Please enter a valid email address ending with .com (e.g., example@gmail.com)"
+    >
+</div>
+
+                <div class="input-group">
+                    <label>Password</label>
+                    <input 
+                        type="password" 
+                        id="registerPassword" 
+                        class="modern-input" 
+                        placeholder="Enter your password" 
+                        required
+                        minlength="6"
+                        maxlength="8"
+                        pattern="^(?=.*[A-Z])(?=.*[!@#$%^&*(),.?\:{}|<>])(?=.*[0-9]).{6,8}$"
+                        title="Password must contain at least 1 uppercase letter, 1 special character, 1 number, and must be between 6 to 8 characters long."
+                    >
+                </div>
+
+                <div class="input-group">
+                    <label>Role</label>
+                    <select id="regRole" class="modern-input" style="background: #222;">
+                        <option value="jobseeker">Jobseeker</option>
+                        <option value="recruiter">Recruiter</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="apply-btn">Register Now</button>
+                <p style="margin-top: 15px; font-size: 14px;">Already have an account? <a href="login.html" style="color: #00d4ff; text-decoration: none;">Login</a></p>
+            </form>
+        </div>
+    </div>
+
+    <script>
+    document.getElementById('registrationForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    // १. इनपुट फील्ड्समधून डेटा मिळवणे
+    const email = document.getElementById('regEmail').value;
+    const password = document.getElementById('registerPassword').value;
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[c][o][m]$/;
+
+    if (!emailRegex.test(email)) {
+        alert("❌ Invalid Email Address!\nEmail must contain '@' and end with '.com' (e.g., example@gmail.com).");
+        return; 
+    }
+
+   
+    const passwordRegex = /^(?=.*[A-Z])(?=.*[!@#$%^&*(),.?":{}|<>])(?=.*[0-9]).{6,8}$/;
+
+    if (!passwordRegex.test(password)) {
+        alert("❌ Invalid Password!\nPassword must be 6-8 chars with at least 1 uppercase, 1 number, and 1 special character.");
+        return; 
+    }
+
+    const formData = {
+        name: document.getElementById('regName').value,
+        email: email,
+        password: password,
+        role: document.getElementById('regRole').value
+    };
+
+    try {
+       
+        const response = await fetch('/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(formData)
+        });
+
+        if (response.ok) {
+            
+            document.getElementById('form-content').style.display = 'none';
+            document.getElementById('success-screen').style.display = 'block';
+
+            let timeLeft = 5;
+            const countdownElement = document.getElementById('countdown');
+
+            const timer = setInterval(() => {
+                timeLeft--;
+                countdownElement.innerText = timeLeft;
+
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    window.location.href = 'login.html'; 
+                }
+            }, 1000);
+
+        } else {
+            const result = await response.json();
+            alert("Error: " + (result.message || "Registration failed. Try again."));
+        }
+    } catch (error) {
+        console.error("Error:", error);
+        alert("Server is not responding! Please check your terminal/server.");
+    }
+});
+    </script>
+
+</body>
+</html>
