@@ -27,6 +27,26 @@ app.use(express.static(path.join(__dirname, 'public'), {
     }
 }));
 
+app.post('/webhook/vapi-results', async (req, res) => {
+    try {
+        
+        const n8nWebhookUrl = 'http://localhost:5678/webhook/vapi-results'; 
+
+        const response = await fetch(n8nWebhookUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(req.body)
+        });
+
+        
+        res.status(response.status).send("Data forwarded successfully");
+    } catch (error) {
+        console.error("Error forwarding to n8n:", error);
+        res.status(500).send("Internal Server Error");
+    }
+});
 const getUsers = () => {
     if (!fs.existsSync(usersFile)) {
         fs.writeFileSync(usersFile, JSON.stringify([], null, 2));
