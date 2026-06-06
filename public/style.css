@@ -807,6 +807,18 @@ input[type="file"] {
 .links a:hover {
     color: white;
 }
+@media (max-width: 768px) {
+   
+    .menu-panel, #menuPanel, div[style*="Menu Panel"] {
+        position: relative !important;
+        right: auto !important;
+        top: auto !important;
+        display: block !important;
+        width: 90% !important; 
+        margin: 20px auto !important; 
+        text-align: center !important;
+    }
+}
 /*---------vapi ----------*/
 
 .interview-container {
