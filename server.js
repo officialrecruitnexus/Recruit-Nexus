@@ -140,6 +140,62 @@ app.get('/jobseeker-dashboard.html', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'jobseeker-dashboard.html'));
 });
 
+const N8N_SERVER_BASE = "https://3dzqxw2k-5678.inc1.devtunnels.ms"; 
+
+
+app.post('/proxy/job-application', async (req, res) => {
+    try {
+        const response = await fetch(`${N8N_SERVER_BASE}/webhook/Job%20Application`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(req.body)
+        });
+        res.status(response.status).send(await response.text());
+    } catch (e) { res.status(500).send("Proxy Error"); }
+});
+
+
+app.post('/proxy/job-application-test', async (req, res) => {
+    try {
+        const response = await fetch(`${N8N_SERVER_BASE}/webhook-test/Job%20Application`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(req.body)
+        });
+        res.status(response.status).send(await response.text());
+    } catch (e) { res.status(500).send("Proxy Error"); }
+});
+
+
+app.post('/proxy/parse-resume', async (req, res) => {
+    try {
+        const response = await fetch(`${N8N_SERVER_BASE}/webhook/parse-resume`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(req.body)
+        });
+        res.status(response.status).send(await response.text());
+    } catch (e) { res.status(500).send("Proxy Error"); }
+});
+
+
+app.post('/proxy/jobseeker-chat', async (req, res) => {
+    try {
+        const response = await fetch(`${N8N_SERVER_BASE}/webhook/jobseeker-chat`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(req.body)
+        });
+        res.status(response.status).send(await response.text());
+    } catch (e) { res.status(500).send("Proxy Error"); }
+});
+
+
+app.post('/proxy/update-profile', async (req, res) => {
+    try {
+        const response = await fetch(`${N8N_SERVER_BASE}/webhook/update-profile`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(req.body)
+        });
+        res.status(response.status).send(await response.text());
+    } catch (e) { res.status(500).send("Proxy Error"); }
+});
 
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
