@@ -1,9 +1,10 @@
 const express = require('express');
 const cors = require('cors');
-const multer = require('multer');
-const pdf = require('pdf-parse');
 const fs = require('fs');
 const path = require('path');
+const multer = require('multer'); 
+const pdf = require('pdf-parse');
+const FormData = require('form-data');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -14,11 +15,14 @@ const uploadDir = path.join(__dirname, "uploads");
 if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir);
 }
-const multer = require('multer');
+
+
 const upload = multer();
+
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
 
 app.use(express.static(path.join(__dirname, 'public'), {
     setHeaders: (res, filePath) => {
@@ -28,26 +32,27 @@ app.use(express.static(path.join(__dirname, 'public'), {
     }
 }));
 
+const N8N_SERVER_BASE = "https://3dzqxw2k-5678.inc1.devtunnels.ms"; 
+
+
 app.post('/webhook/vapi-results', async (req, res) => {
     try {
-        
-        const n8nWebhookUrl = 'https://3dzqxw2k-5678.inc1.devtunnels.ms/webhook/vapi-results'; 
+        const n8nWebhookUrl = `${N8N_SERVER_BASE}/webhook/vapi-results`; 
 
         const response = await fetch(n8nWebhookUrl, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(req.body)
         });
 
-        
         res.status(response.status).send("Data forwarded successfully");
     } catch (error) {
         console.error("Error forwarding to n8n:", error);
         res.status(500).send("Internal Server Error");
     }
 });
+
+
 const getUsers = () => {
     if (!fs.existsSync(usersFile)) {
         fs.writeFileSync(usersFile, JSON.stringify([], null, 2));
@@ -63,62 +68,41 @@ app.post('/register', async (req, res) => {
         const { name, email, password, role } = req.body;
         let users = getUsers(); 
         
-        // Email match check karne
         if (users.find(u => u.email === email)) {
             return res.status(400).json({ message: "Email already exists" });
         }
         
-        
-        const newUser = { 
-            name, 
-            email, 
-            password, 
-            role  
-        };
-
-        
+        const newUser = { name, email, password, role };
         users.push(newUser);
         fs.writeFileSync(usersFile, JSON.stringify(users, null, 2));
 
-       
         res.status(200).json({ message: "Registration successful!" });
-
     } catch (err) { 
         console.error("Registration Error:", err);
         res.status(500).json({ message: "Registration Error on server side" }); 
     }
 });
 
-// 2. LOGIN ROUTE (SMART ROLE BASED APPROVAL)
 app.post('/login', (req, res) => {
     const { email, password } = req.body;
-    
     const usersList = getUsers(); 
     const user = usersList.find(u => u.email === email && u.password === password);
     
     if (user) {
-        let dashboard = "";
+        let dashboard = "jobseeker-dashboard.html";
 
-       
         if (user.role === "recruiter") {
             if (user.isApproved === true || user.isApproved === "true") {
                 dashboard = "recruiter-dashboard.html";
             } else {
-                
-                dashboard = "jobseeker-dashboard.html";
                 user.role = "jobseeker"; 
             }
-        } else {
-          
-            dashboard = "jobseeker-dashboard.html";
         }
-
         res.status(200).json({ redirectUrl: dashboard, role: user.role });
     } else {
         res.status(401).json({ message: "Invalid credentials" });
     }
 });
-
 
 app.get('/api/get-profile', (req, res) => {
     const { email } = req.query;
@@ -131,30 +115,26 @@ app.get('/api/get-profile', (req, res) => {
     }
 });
 
-
+// --- 📄 PAGE ROUTING ---
 app.get('/interview', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'interview.html'));
 });
-
 
 app.get('/jobseeker-dashboard.html', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'jobseeker-dashboard.html'));
 });
 
-const N8N_SERVER_BASE = "https://3dzqxw2k-5678.inc1.devtunnels.ms"; 
-const FormData = require('form-data'); // हे एक्सप्रेसमध्ये इन-बिल्ट असतं किंवा इंस्टॉल करावं लागतं
 
-// 📑 १. Job Application Live Proxy (With File Support)
+
+
 app.post('/proxy/job-application', upload.single('data'), async (req, res) => {
     try {
         const n8nFormData = new FormData();
         
-       
         for (const key in req.body) {
             n8nFormData.append(key, req.body[key]);
         }
         
-       
         if (req.file) {
             n8nFormData.append('data', req.file.buffer, {
                 filename: req.file.originalname,
@@ -164,8 +144,8 @@ app.post('/proxy/job-application', upload.single('data'), async (req, res) => {
 
         const response = await fetch(`${N8N_SERVER_BASE}/webhook/Job%20Application`, {
             method: 'POST',
-            body: n8nFormData, // फॉर्म डेटा फॉरवर्ड केला
-            headers: n8nFormData.getHeaders() // योग्य हेडर ऑटोमॅटिक सेट होतील
+            body: n8nFormData,
+            headers: n8nFormData.getHeaders()
         });
 
         res.status(response.status).send(await response.text());
@@ -175,7 +155,7 @@ app.post('/proxy/job-application', upload.single('data'), async (req, res) => {
     }
 });
 
-// 🧪 २. Job Application Test Proxy (With File Support)
+
 app.post('/proxy/job-application-test', upload.single('data'), async (req, res) => {
     try {
         const n8nFormData = new FormData();
@@ -191,19 +171,46 @@ app.post('/proxy/job-application-test', upload.single('data'), async (req, res) 
             method: 'POST', body: n8nFormData, headers: n8nFormData.getHeaders()
         });
         res.status(response.status).send(await response.text());
-    } catch (e) { res.status(500).send("Proxy Error"); }
+    } catch (e) { 
+        console.error("Test Proxy Error:", e);
+        res.status(500).send("Proxy Error"); 
+    }
 });
 
-// 💬 ३. Jobseeker Chat Proxy (Regular JSON)
+
 app.post('/proxy/jobseeker-chat', async (req, res) => {
     try {
         const response = await fetch(`${N8N_SERVER_BASE}/webhook/jobseeker-chat`, {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            method: 'POST', 
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(req.body)
         });
         res.status(response.status).send(await response.text());
-    } catch (e) { res.status(500).send("Proxy Error"); }
+    } catch (e) { 
+        console.error("Chat Proxy Error:", e);
+        res.status(500).send("Proxy Error"); 
+    }
 });
+
+
+app.post('/proxy/update-profile', async (req, res) => {
+    try {
+       ा
+        const targetPath = req.body.action === "fetch" ? 'get-profile' : 'update-profile';
+        
+        const response = await fetch(`${N8N_SERVER_BASE}/webhook/${targetPath}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(req.body)
+        });
+        res.status(response.status).send(await response.text());
+    } catch (e) {
+        console.error("Profile Proxy Error:", e);
+        res.status(500).send("Proxy Error");
+    }
+});
+
+
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
