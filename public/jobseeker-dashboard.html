@@ -554,29 +554,26 @@
     const VAPI_PUBLIC_KEY = "5337c487-eba3-4168-8139-640605a107ef"; 
     const ASSISTANT_ID    = "a18b8cba-5b23-41d4-946e-c0ea9c73ee4f"; 
 
-    const jobs = JSON.parse(localStorage.getItem("jobs")) || [];
+    const jobs = [];
     let streamRef = null;
     let vapiInstance = null;
 
-    // --- १. ग्लोबल फंक्शन्स (जे HTML बटण ऑन-क्लिक वर चालतात) ---
+    // --- १. ग्लोबल फंक्शन्स (HTML Elements साठी ऑन-क्लिक) ---
     
-    // n8n फॉर्म ओपन करणे
-    function openN8nForm() { 
+    window.openN8nForm = function() { 
         window.open(N8N_FORM_URL, '_blank'); 
-    }
+    };
     
-    // फाईल सिलेक्ट केल्यावर नाव दाखवणे
-    function updateFileName() {
+    window.updateFileName = function() {
         const fileInput = document.getElementById('resumeFile');
         const uploadText = document.getElementById('uploadText');
         if(fileInput && fileInput.files.length > 0) {
-            uploadText.innerText = `✅ Selected File: ${fileInput.files[0].name}`;
+            uploadText.innerText = "✅ Selected File: " + fileInput.files[0].name;
             uploadText.style.color = "#00ff88";
         }
-    }
+    };
 
-    // रेझ्युमे अपलोड आणि पार्सिंग (ATS Score)
-    async function uploadResume() {
+    window.uploadResume = async function() {
         const fileInput = document.getElementById('resumeFile');
         const name = document.getElementById('seekerName')?.value;
         const email = document.getElementById('seekerEmail')?.value;
@@ -612,66 +609,47 @@
             if(document.getElementById('aiFeedback')) document.getElementById('aiFeedback').innerText = feedback;
             if(document.getElementById('pdfCandidateName')) document.getElementById('pdfCandidateName').innerText = name;
             if(document.getElementById('aiImprovedResume')) {
-                document.getElementById('aiImprovedResume').innerText = `${name.toUpperCase()}\nEmail: ${email}\n[OBJECTIVE]\nOptimized Template Alignment: ${template}`;
+                document.getElementById('aiImprovedResume').innerText = name.toUpperCase() + "\nEmail: " + email + "\n[OBJECTIVE]\nOptimized Template Alignment: " + template;
             }
         } catch (error) {
             console.error("Resume Upload Error:", error);
             if(document.getElementById('loadingText')) document.getElementById('loadingText').style.display = "none";
             if(document.getElementById('resultCard')) document.getElementById('resultCard').style.display = "block";
         }
-    }
+    };
 
-    // ATS रेझ्युमे PDF डाउनलोड करणे
-    function downloadATSResume() {
+    window.downloadATSResume = function() {
         const element = document.getElementById('pdfResumeContent');
         const candidateName = document.getElementById('seekerName')?.value || "Candidate";
         if(!element) return;
         const options = { 
             margin: 15, 
-            filename: `${candidateName}_ATS_Resume.pdf`, 
+            filename: candidateName + "_ATS_Resume.pdf", 
             image: { type: 'jpeg', quality: 0.98 }, 
             html2canvas: { scale: 2 }, 
             jsPDF: { format: 'a4', orientation: 'portrait' } 
         };
         html2pdf().set(options).from(element).save();
-    }
+    };
 
-    // --- २. साईडबार आणि नेव्हिगेशन फंक्शन्स ---
-    const toggleSidebarBtn = document.getElementById('toggleSidebarBtn');
-    const closeSidebarBtn = document.getElementById('closeSidebarBtn');
-    const sidebarDrawer = document.getElementById('sidebarDrawer');
-    const bodyEl = document.body;
-
-    if (toggleSidebarBtn && sidebarDrawer) {
-        toggleSidebarBtn.addEventListener('click', () => {
-            sidebarDrawer.classList.toggle('active');
-            bodyEl.classList.toggle('sidebar-open');
-        });
-    }
-
-    if (closeSidebarBtn && sidebarDrawer) {
-        closeSidebarBtn.addEventListener('click', () => {
-            sidebarDrawer.classList.remove('active');
-            bodyEl.classList.remove('sidebar-open');
-        });
-    }
-
-    function scrollToSection(sectionId) {
+    // --- २. साईडबार आणि नेव्हिगेशन ---
+    window.scrollToSection = function(sectionId) {
         if (sectionId === 'profile-section') {
             showProfileSection();
         }
         const element = document.getElementById(sectionId);
+        const sidebarDrawer = document.getElementById('sidebarDrawer');
         if (element) { 
             element.scrollIntoView({ behavior: 'smooth', block: 'start' }); 
             if(window.innerWidth <= 768 && sidebarDrawer) {
                 sidebarDrawer.classList.remove('active');
-                bodyEl.classList.remove('sidebar-open');
+                document.body.classList.remove('sidebar-open');
             }
         }
-    }
+    };
 
-    // --- ३. जॉब्स रेंडर आणि ऑटो-अप्लाय ---
-    function renderJobs() {
+    // --- ३. जॉब्स रेंडर सिस्टीम ---
+    window.renderJobs = function() {
         const container = document.getElementById("jobCards");
         if(!container) return;
         container.innerHTML = jobs.length ? "" : "<p style='color: #fff;'>No automated jobs found in the database.</p>";
@@ -680,11 +658,11 @@
             const card = document.createElement("div");
             card.className = "job-card";
             
-            const jobDescription = job.description || job.desc || job.jobDesc || 'No description provided.';
-            const location = job.location || job.loc || 'Not Specified';
-            const experience = job.experience || job.exp || 'Not Specified';
-            const salary = job.salary || job.ctc || 'Not Specified';
-            const id = job.id || job.jobId || 'N/A';
+            const jobDescription = job.description || job.desc || 'No description provided.';
+            const location = job.location || 'Not Specified';
+            const experience = job.experience || 'Not Specified';
+            const salary = job.salary || 'Not Specified';
+            const id = job.id || 'N/A';
             const role = job.role || 'N/A';
 
             card.innerHTML = `
@@ -702,20 +680,20 @@
                     <span style="display: block; white-space: pre-line; line-height: 1.4;">${jobDescription}</span>
                 </div>
                 <div class="apply-form" style="display: flex; flex-direction: column; gap: 10px;">
-                    <input type="text" id="name_${job.id}" placeholder="Full Name" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #636e72; background: #2d3436; color: #fff;">
-                    <input type="email" id="email_${job.id}" placeholder="Email Address" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #636e72; background: #2d3436; color: #fff;">
+                    <input type="text" id="name_${id}" placeholder="Full Name" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #636e72; background: #2d3436; color: #fff;">
+                    <input type="email" id="email_${id}" placeholder="Email Address" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #636e72; background: #2d3436; color: #fff;">
                     <label style="font-size: 13px; font-weight: bold; color: #dfe6e9; display: block; margin-top: 5px;">Attach Resume (PDF):</label>
-                    <input type="file" id="file_${job.id}" accept=".pdf" style="color: #dfe6e9;">
-                    <button onclick="autoApply('${job.id}', '${job.title}')" id="btn_${job.id}" style="width: 100%; background: #3498db; color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; margin-top: 10px; font-size: 14px;">
+                    <input type="file" id="file_${id}" accept=".pdf" style="color: #dfe6e9;">
+                    <button onclick="autoApply('${id}', '${job.title}')" id="btn_${id}" style="width: 100%; background: #3498db; color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; margin-top: 10px; font-size: 14px;">
                         Instant Apply
                     </button>
                 </div>
             `;
             container.appendChild(card);
         });
-    }
+    };
 
-    async function autoApply(jobId, jobTitle) {
+    window.autoApply = async function(jobId, jobTitle) {
         const name = document.getElementById(`name_${jobId}`).value;
         const email = document.getElementById(`email_${jobId}`).value;
         const file = document.getElementById(`file_${jobId}`).files[0];
@@ -741,70 +719,19 @@
             alert("Connection failed!");
             btn.disabled = false; btn.innerText = "Instant Apply";
         }
-    }
+    };
 
-    // --- ४. प्रोफाईल अपडेट फॉर्म सबमिशन (नवीन सर्व्हर राऊटनुसार) ---
-    const profileForm = document.getElementById('profileForm');
-    if (profileForm) {
-        profileForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-
-            const updatedData = {
-                action: "update",
-                name: document.getElementById('profileName').value,
-                email: document.getElementById('lblProfileEmail').innerText, 
-                phone: document.getElementById('profilePhone').value,
-                education: document.getElementById('profileEducation').value,
-                location: document.getElementById('profileLocation').value,
-                linkedin: document.getElementById('profileLinkedin').value,
-                experience: document.getElementById('profileExperience').value,
-                skills: document.getElementById('profileSkills').value
-            };
-
-            if (document.getElementById('welcomeName') && updatedData.name) {
-                document.getElementById('welcomeName').innerText = updatedData.name;
-            }
-
-            if (document.getElementById('lblProfileName'))       document.getElementById('lblProfileName').innerText = updatedData.name || "Not Specified";
-            if (document.getElementById('lblProfilePhone'))      document.getElementById('lblProfilePhone').innerText = updatedData.phone || "-";
-            if (document.getElementById('lblProfileEducation')) document.getElementById('lblProfileEducation').innerText = updatedData.education || "-";
-            if (document.getElementById('lblProfileLocation'))  document.getElementById('lblProfileLocation').innerText = updatedData.location || "-";
-            if (document.getElementById('lblProfileLinkedin'))  document.getElementById('lblProfileLinkedin').innerText = updatedData.linkedin || "-";
-            if (document.getElementById('lblProfileExperience')) document.getElementById('lblProfileExperience').innerText = updatedData.experience || "-";
-            if (document.getElementById('lblProfileSkills'))    document.getElementById('lblProfileSkills').innerText = updatedData.skills || "-";
-
-            try {
-                const response = await fetch(N8N_PROFILE_UPDATE_URL, { 
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(updatedData)
-                });
-
-                if (response.ok) {
-                    alert("Changes saved successfully to Google Sheet! 🚀");
-                    closeNaukriModal();
-                    if (typeof toggleLinkedInEditForm === 'function') {
-                        toggleLinkedInEditForm();
-                    }
-                } else {
-                    console.warn("Backend dynamic saving issue, but UI updated.");
-                }
-            } catch (error) {
-                console.error("LinkedIn style network sync failed:", error);
-                alert("Network issue, but changes are active locally!");
-            }
-        });
-    }
-
-    // --- ५. चॅटबॉक्स सिस्टीम ---
-    function toggleChat() {
+    // --- ४. चॅटबॉक्स सिस्टीम ---
+    window.toggleChat = function() {
         const chatBox = document.getElementById('chatBox');
         if(chatBox) chatBox.style.display = (chatBox.style.display === 'none' || chatBox.style.display === '') ? 'flex' : 'none';
-    }
+    };
     
-    function handleKeyPress(event) { if (event.key === 'Enter') sendMessage(); }
+    window.handleKeyPress = function(event) { 
+        if (event.key === 'Enter') sendMessage(); 
+    };
     
-    async function sendMessage() {
+    window.sendMessage = async function() {
         const inputField = document.getElementById('userInput');
         const userText = inputField?.value.trim();
         if (!userText) return;
@@ -813,7 +740,11 @@
         if(document.getElementById('typingIndicator')) document.getElementById('typingIndicator').style.display = 'block';
 
         try {
-            const response = await fetch(N8N_WEBHOOK_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chatInput: userText, sessionId: "jobseeker_session_101" }) });
+            const response = await fetch(N8N_WEBHOOK_URL, { 
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json' }, 
+                body: JSON.stringify({ chatInput: userText, sessionId: "jobseeker_session_101" }) 
+            });
             const data = await response.json();
             if(document.getElementById('typingIndicator')) document.getElementById('typingIndicator').style.display = 'none';
             appendMessage(data.output || "No reply", 'bot-msg');
@@ -821,17 +752,17 @@
             if(document.getElementById('typingIndicator')) document.getElementById('typingIndicator').style.display = 'none';
             appendMessage("Server connection error.", 'bot-msg');
         }
-    }
+    };
     
     function appendMessage(text, className) {
         const chatMessages = document.getElementById('chatMessages');
         if(!chatMessages) return;
-        const msg = document.createElement('div'); msg.className = `msg ${className}`; msg.innerText = text;
+        const msg = document.createElement('div'); msg.className = "msg " + className; msg.innerText = text;
         chatMessages.insertBefore(msg, document.getElementById('typingIndicator'));
         chatMessages.scrollTop = chatMessages.scrollHeight;
     }
 
-    // --- ६. Vapi AI लाइव्ह इंटरव्यू ---
+    // --- ५. Vapi AI लाइव्ह इंटरव्यू ---
     window.startAIInterview = async function() {
         const statusText = document.getElementById('interviewStatus');
         const userCamera = document.getElementById('userCamera');
@@ -859,22 +790,12 @@
             }
             
             vapiInstance.on('call-start', () => {
-                if (statusText) statusText.innerHTML = `<span style="color:#10b981; font-weight:bold;"><i class="fa-solid fa-comment-dots mr-2"></i>Interview started! Speak now...</span>`;
+                if (statusText) statusText.innerHTML = '<span style="color:#10b981; font-weight:bold;"><i class="fa-solid fa-comment-dots mr-2"></i>Interview started!</span>';
                 if (liveBadge) liveBadge.classList.remove('hidden');
             });
 
-            vapiInstance.on('track', (track) => {
-                if (track.kind === 'audio') {
-                    console.log("🔊 AI Audio Track Activated!");
-                    const audioNode = document.createElement('audio');
-                    audioNode.srcObject = new MediaStream([track]);
-                    audioNode.autoplay = true;
-                    document.body.appendChild(audioNode);
-                }
-            });
-
             vapiInstance.on('call-end', () => {
-                if (statusText) statusText.innerHTML = `<span style="color:#38bdf8; font-weight:bold;"><i class="fa-solid fa-square-check mr-2"></i>Interview completed!</span>`;
+                if (statusText) statusText.innerHTML = '<span style="color:#38bdf8; font-weight:bold;"><i class="fa-solid fa-square-check mr-2"></i>Interview completed!</span>';
                 cleanupMedia();
             });
 
@@ -891,8 +812,7 @@
             });
 
         } catch (err) {
-            console.log("Camera Connected.");
-            if (statusText) statusText.innerHTML = `<span style="color:#10b981; font-weight:bold;"><i class="fa-solid fa-circle-check mr-2"></i>System is Ready..</span>`;
+            if (statusText) statusText.innerHTML = '<span style="color:#10b981; font-weight:bold;"><i class="fa-solid fa-circle-check mr-2"></i>System is Ready..</span>';
         }
     };
 
@@ -908,136 +828,75 @@
         if (document.getElementById('liveBadge')) document.getElementById('liveBadge').classList.add('hidden');
     }
 
-    // --- ७. सेक्शन्स डिस्प्ले टॉगल (UI व्यवस्थापन) ---
-    function showProfileSection() {
+    // --- ६. सेक्शन्स डिस्प्ले टॉगल ---
+    window.showProfileSection = function() {
         ['recommended-section', 'ats-section', 'interview-section'].forEach(id => {
             const el = document.getElementById(id); if (el) el.style.display = 'none';
         });
         if (document.getElementById('profile-section')) document.getElementById('profile-section').style.display = 'block';
         if (document.getElementById('profileDisplayCard')) document.getElementById('profileDisplayCard').style.display = 'block';
         if (document.getElementById('profileEditFormContainer')) document.getElementById('profileEditFormContainer').style.display = 'none';
-        
-        const editBtn = document.getElementById('editProfileBtn');
-        if (editBtn) {
-            editBtn.innerHTML = `<i class="fa-solid fa-pen"></i> Edit Profile`;
-            editBtn.style.background = '#1e293b'; editBtn.style.color = '#38bdf8';
-        }
-    }
+    };
 
-    function showAtsSection() {
+    window.showAtsSection = function() {
         ['profile-section', 'recommended-section', 'interview-section'].forEach(id => {
             const el = document.getElementById(id); if (el) el.style.display = 'none';
         });
         if (document.getElementById('ats-section')) document.getElementById('ats-section').style.display = 'block';
-    }
+    };
 
-    function showInterviewSection() {
+    window.showInterviewSection = function() {
         ['profile-section', 'recommended-section', 'ats-section'].forEach(id => {
             const el = document.getElementById(id); if (el) el.style.display = 'none';
         });
         if (document.getElementById('interview-section')) document.getElementById('interview-section').style.display = 'block';
-    }
+    };
 
-    function showRecommendedSection() {
+    window.showRecommendedSection = function() {
         ['profile-section', 'ats-section', 'interview-section'].forEach(id => {
             const el = document.getElementById(id); if (el) el.style.display = 'none';
         });
         if (document.getElementById('recommended-section')) document.getElementById('recommended-section').style.display = 'block';
-    }
+    };
 
-    function openNaukriModal() {
-        const modal = document.getElementById('naukriProfileModal'); if (modal) modal.style.display = 'flex';
-        const currentActiveEmail = document.getElementById('lblProfileEmail')?.innerText || localStorage.getItem("userEmail") || "";
-        if (document.getElementById('profileEmail')) document.getElementById('profileEmail').value = currentActiveEmail;
-        if (document.getElementById('profileName')) document.getElementById('profileName').value = document.getElementById('lblProfileName')?.innerText || "";
-        if (document.getElementById('profileExperience')) document.getElementById('profileExperience').value = document.getElementById('lblProfileExperience')?.innerText || "";
-        if (document.getElementById('profileLocation')) document.getElementById('profileLocation').value = document.getElementById('lblProfileLocation')?.innerText || "";
-        if (document.getElementById('profilePhone')) document.getElementById('profilePhone').value = document.getElementById('lblProfilePhone')?.innerText || "";
-        if (document.getElementById('profileLinkedin')) document.getElementById('profileLinkedin').value = document.getElementById('lblProfileLinkedin')?.innerText || "";
-        if (document.getElementById('profileSkills')) document.getElementById('profileSkills').value = document.getElementById('lblProfileSkills')?.innerText || "";
-        if (document.getElementById('profileEducation')) document.getElementById('profileEducation').value = document.getElementById('lblProfileEducation')?.innerText || "";
-    }
-
-    function closeNaukriModal() {
-        const modal = document.getElementById('naukriProfileModal'); if (modal) modal.style.display = 'none';
-    }
-
-    function toggleLinkedInEditForm() {
+    window.toggleLinkedInEditForm = function() {
         const displayCard = document.getElementById('profileDisplayCard');
         const editForm = document.getElementById('profileEditFormContainer');
-        const editBtn = document.getElementById('editProfileBtn');
         if (!editForm || !displayCard) return;
-
         if (editForm.style.display === 'none') {
             editForm.style.display = 'block'; displayCard.style.display = 'none';
-            if (editBtn) editBtn.innerHTML = `<i class="fa-solid fa-xmark"></i> Close Editor`;
         } else {
             editForm.style.display = 'none'; displayCard.style.display = 'block';
-            if (editBtn) editBtn.innerHTML = `<i class="fa-solid fa-pen"></i> Edit Profile`;
         }
-    }
+    };
 
-    // --- ८. डॉक्युमेंट रेडी इव्हेंट (ऑटो-लोड डेटा पाईपलाईन) ---
-    window.addEventListener('DOMContentLoaded', async () => {
-        const loggedInEmail = localStorage.getItem("userEmail") || "shrutisaste9@gmail.com"; 
-        
-        if(document.getElementById('lblProfileEmail')) {
-            document.getElementById('lblProfileEmail').innerText = loggedInEmail;
-        }
-
-        console.log("🔍 Fetching data from Sheet via Server Proxy for:", loggedInEmail);
-
+    // --- ७. डेटा लोड ऑन लोड ---
+    window.fetchJobsFromServer = async function() {
         try {
-            // तुमच्या नवीन एक्सप्रेस सर्व्हर प्रॉक्सी कडे रिक्वेस्ट पाठवली
-            const response = await fetch(N8N_PROFILE_UPDATE_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email: loggedInEmail, action: "fetch" }) 
-            });
-
-            if (response.ok) {
-                const rawData = await response.json();
-                let userData = Array.isArray(rawData) ? rawData[0] : rawData;
-
-                if (userData && Object.keys(userData).length > 0) {
-                    const finalName = userData.Name || userData.name || "Shruti Saste";
-                    if (document.getElementById('lblProfileName')) document.getElementById('lblProfileName').innerText = finalName;
-                    if (document.getElementById('welcomeName'))    document.getElementById('welcomeName').innerText = finalName;
-                    if (document.getElementById('lblProfilePhone')) document.getElementById('lblProfilePhone').innerText = userData.Phone || userData.phone || "Add Phone";
-                    if (document.getElementById('lblProfileLocation')) document.getElementById('lblProfileLocation').innerText = userData.Location || userData.location || "Add Location";
-                    if (document.getElementById('lblProfileEducation')) document.getElementById('lblProfileEducation').innerText = userData.Education || userData.education || "Add Education";
-                    if (document.getElementById('lblProfileExperience')) document.getElementById('lblProfileExperience').innerText = userData.Experience || userData.experience || "Fresher";
-                    if (document.getElementById('lblProfileSkills')) document.getElementById('lblProfileSkills').innerText = userData.Skills || userData.skills || "Add Skills";
-                    if (document.getElementById('lblProfileLinkedin')) document.getElementById('lblProfileLinkedin').innerText = userData.Linkedin || userData.linkedin || "Add LinkedIn URL";
-                    console.log("🎉 Profile cards loaded smoothly!");
-                }
-            }
-        } catch (error) {
-            console.error("❌ Profile Auto loading failed:", error);
-        }
-
-        // सर्वर वरून जॉब्स फेच करणे
-        fetchJobsFromServer();
-    });
-
-    async function fetchJobsFromServer() {
-        try {
-            const response = await fetch('/api/jobs'); // किंवा तुमच्या एक्सप्रेसचा योग्य जॉब्स राऊट
+            const response = await fetch('/api/jobs'); 
             if (response.ok) {
                 const data = await response.json();
-                localStorage.setItem("jobs", JSON.stringify(data));
-                jobs.length = 0; jobs.push(...data);
+                jobs.length = 0; 
+                jobs.push(...data);
             }
         } catch (error) {
             console.error("Jobs fetch error:", error);
         }
         renderJobs();
-    }
+    };
 
-    window.addEventListener('storage', () => {
-        const updatedJobs = JSON.parse(localStorage.getItem("jobs")) || [];
-        jobs.length = 0; jobs.push(...updatedJobs);
-        renderJobs();
+    window.addEventListener('DOMContentLoaded', () => {
+        const toggleSidebarBtn = document.getElementById('toggleSidebarBtn');
+        const sidebarDrawer = document.getElementById('sidebarDrawer');
+        if (toggleSidebarBtn && sidebarDrawer) {
+            toggleSidebarBtn.addEventListener('click', () => {
+                sidebarDrawer.classList.toggle('active');
+                document.body.classList.toggle('sidebar-open');
+            });
+        }
+        
+        
+        fetchJobsFromServer();
     });
 </script>
 </body>
