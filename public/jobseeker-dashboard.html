@@ -540,15 +540,19 @@
     <script src="https://cdn.jsdelivr.net/npm/@vapi-ai/web@1.0.1/dist/vapi.browser.js"></script>
 
 <script>
-    const BASE_TUNNEL_URL = "https://3dzqxw2k-5678.inc1.devtunnels.ms/webhook/Job%20Application";
-    const WEBHOOK_URL = "http://localhost:5678/webhook-test/Job%20Application";
-    const N8N_FORM_URL = "https://3dzqxw2k-5678.inc1.devtunnels.ms/form/6677f5d4-d655-460e-ad4c-2df51a22c9b6"; 
-    const RESUME_WEBHOOK_URL = "http://localhost:5678/webhook/parse-resume";
-    const N8N_WEBHOOK_URL = 'http://localhost:5678/webhook/jobseeker-chat';
-    const N8N_PROFILE_UPDATE_URL = "http://localhost:5678/webhook/update-profile"; 
+   
+const BASE_TUNNEL_URL         = "/proxy/job-application";
+const WEBHOOK_URL             = "/proxy/job-application-test";
+const RESUME_WEBHOOK_URL      = "/proxy/parse-resume";
+const N8N_WEBHOOK_URL         = "/proxy/jobseeker-chat";
+const N8N_PROFILE_UPDATE_URL  = "/proxy/update-profile"; 
 
-    const VAPI_PUBLIC_KEY = "5337c487-eba3-4168-8139-640605a107ef"; 
-    const ASSISTANT_ID = "a18b8cba-5b23-41d4-946e-c0ea9c73ee4f"; 
+
+const N8N_FORM_URL = "https://3dzqxw2k-5678.inc1.devtunnels.ms/form/6677f5d4-d655-460e-ad4c-2df51a22c9b6"; 
+
+
+const VAPI_PUBLIC_KEY = "5337c487-eba3-4168-8139-640605a107ef"; 
+const ASSISTANT_ID    = "a18b8cba-5b23-41d4-946e-c0ea9c73ee4f";
 
     const jobs = JSON.parse(localStorage.getItem("jobs")) || [];
     let streamRef = null;
@@ -1147,6 +1151,41 @@ window.addEventListener('DOMContentLoaded', async () => {
     } catch (error) {
         console.error("❌ Auto loading pipeline failed:", error);
     }
+});
+  
+
+async function fetchJobsFromServer() {
+    try {
+        
+        const response = await fetch('/api/jobs'); 
+        if (response.ok) {
+            const data = await response.json();
+            localStorage.setItem("jobs", JSON.stringify(data));
+            
+           ा
+            jobs.length = 0;
+            jobs.push(...data);
+            
+            renderJobs(); ा
+        }
+    } catch (error) {
+        console.error("Jobs fetch error:", error);
+    }
+}
+
+ा
+document.addEventListener("DOMContentLoaded", () => {
+    fetchJobsFromServer(); 
+    renderJobs();          
+});
+
+
+window.addEventListener('storage', () => {
+    const updatedJobs = JSON.parse(localStorage.getItem("jobs")) || [];
+    ा
+    jobs.length = 0; 
+    jobs.push(...updatedJobs);
+    renderJobs();
 });
 </script>
 </body>
