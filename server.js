@@ -14,7 +14,8 @@ const uploadDir = path.join(__dirname, "uploads");
 if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir);
 }
-
+const multer = require('multer');
+const upload = multer();
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
