@@ -540,7 +540,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@vapi-ai/web@1.0.1/dist/vapi.browser.js"></script>
 
 <script>
-    // --- n8n ऑटोमेशन प्रॉक्सी लिंक्स (लॅपटॉप आणि Render दोन्हीवर चालतील) ---
+    // --- n8n ऑटोमेशन प्रॉक्सी लिंक्स (तुमच्या नवीन server.js नुसार) ---
     const BASE_TUNNEL_URL         = "/proxy/job-application";
     const WEBHOOK_URL             = "/proxy/job-application-test";
     const RESUME_WEBHOOK_URL      = "/proxy/parse-resume";
@@ -558,20 +558,98 @@
     let streamRef = null;
     let vapiInstance = null;
 
-    // --- साईडबार मेन्यू फंक्शन्स ---
+    // --- १. ग्लोबल फंक्शन्स (जे HTML बटण ऑन-क्लिक वर चालतात) ---
+    
+    // n8n फॉर्म ओपन करणे
+    function openN8nForm() { 
+        window.open(N8N_FORM_URL, '_blank'); 
+    }
+    
+    // फाईल सिलेक्ट केल्यावर नाव दाखवणे
+    function updateFileName() {
+        const fileInput = document.getElementById('resumeFile');
+        const uploadText = document.getElementById('uploadText');
+        if(fileInput && fileInput.files.length > 0) {
+            uploadText.innerText = `✅ Selected File: ${fileInput.files[0].name}`;
+            uploadText.style.color = "#00ff88";
+        }
+    }
+
+    // रेझ्युमे अपलोड आणि पार्सिंग (ATS Score)
+    async function uploadResume() {
+        const fileInput = document.getElementById('resumeFile');
+        const name = document.getElementById('seekerName')?.value;
+        const email = document.getElementById('seekerEmail')?.value;
+        const template = document.getElementById('resumeTemplate')?.value;
+        
+        if (!fileInput || !fileInput.files.length || !name || !email) { 
+            alert("Please upload Name, Email and Resume PDF!"); 
+            return; 
+        }
+
+        const formData = new FormData();
+        formData.append("resume", fileInput.files[0]);
+        formData.append("candidateName", name);
+        formData.append("candidateEmail", email);
+        formData.append("selectedTemplate", template);
+        
+        if(document.getElementById('loadingText')) document.getElementById('loadingText').style.display = "block";
+        if(document.getElementById('resultCard')) document.getElementById('resultCard').style.display = "none";
+
+        try {
+            const response = await fetch(RESUME_WEBHOOK_URL, { method: "POST", body: formData });
+            let score = "88", feedback = "Optimized by AI.";
+            if (response.ok) {
+                const result = await response.json();
+                if(result.score) score = result.score;
+                if(result.feedback) feedback = result.feedback;
+            }
+            if(document.getElementById('loadingText')) document.getElementById('loadingText').style.display = "none";
+            if(document.getElementById('resultCard')) document.getElementById('resultCard').style.display = "block"; 
+            
+            if(document.getElementById('chosenTemplate')) document.getElementById('chosenTemplate').innerText = template;
+            if(document.getElementById('atsScore')) document.getElementById('atsScore').innerText = score + "%";
+            if(document.getElementById('aiFeedback')) document.getElementById('aiFeedback').innerText = feedback;
+            if(document.getElementById('pdfCandidateName')) document.getElementById('pdfCandidateName').innerText = name;
+            if(document.getElementById('aiImprovedResume')) {
+                document.getElementById('aiImprovedResume').innerText = `${name.toUpperCase()}\nEmail: ${email}\n[OBJECTIVE]\nOptimized Template Alignment: ${template}`;
+            }
+        } catch (error) {
+            console.error("Resume Upload Error:", error);
+            if(document.getElementById('loadingText')) document.getElementById('loadingText').style.display = "none";
+            if(document.getElementById('resultCard')) document.getElementById('resultCard').style.display = "block";
+        }
+    }
+
+    // ATS रेझ्युमे PDF डाउनलोड करणे
+    function downloadATSResume() {
+        const element = document.getElementById('pdfResumeContent');
+        const candidateName = document.getElementById('seekerName')?.value || "Candidate";
+        if(!element) return;
+        const options = { 
+            margin: 15, 
+            filename: `${candidateName}_ATS_Resume.pdf`, 
+            image: { type: 'jpeg', quality: 0.98 }, 
+            html2canvas: { scale: 2 }, 
+            jsPDF: { format: 'a4', orientation: 'portrait' } 
+        };
+        html2pdf().set(options).from(element).save();
+    }
+
+    // --- २. साईडबार आणि नेव्हिगेशन फंक्शन्स ---
     const toggleSidebarBtn = document.getElementById('toggleSidebarBtn');
     const closeSidebarBtn = document.getElementById('closeSidebarBtn');
     const sidebarDrawer = document.getElementById('sidebarDrawer');
     const bodyEl = document.body;
 
-    if (toggleSidebarBtn) {
+    if (toggleSidebarBtn && sidebarDrawer) {
         toggleSidebarBtn.addEventListener('click', () => {
             sidebarDrawer.classList.toggle('active');
             bodyEl.classList.toggle('sidebar-open');
         });
     }
 
-    if (closeSidebarBtn) {
+    if (closeSidebarBtn && sidebarDrawer) {
         closeSidebarBtn.addEventListener('click', () => {
             sidebarDrawer.classList.remove('active');
             bodyEl.classList.remove('sidebar-open');
@@ -592,7 +670,7 @@
         }
     }
 
-    // --- जॉब्स रेंडर करण्याचे फंक्शन ---
+    // --- ३. जॉब्स रेंडर आणि ऑटो-अप्लाय ---
     function renderJobs() {
         const container = document.getElementById("jobCards");
         if(!container) return;
@@ -637,7 +715,6 @@
         });
     }
 
-    // --- ऑटो अप्लाय फंक्शन ---
     async function autoApply(jobId, jobTitle) {
         const name = document.getElementById(`name_${jobId}`).value;
         const email = document.getElementById(`email_${jobId}`).value;
@@ -666,13 +743,14 @@
         }
     }
 
-    // --- प्रोफाईल अपडेट फॉर्म सबमिशन ---
+    // --- ४. प्रोफाईल अपडेट फॉर्म सबमिशन (नवीन सर्व्हर राऊटनुसार) ---
     const profileForm = document.getElementById('profileForm');
     if (profileForm) {
         profileForm.addEventListener('submit', async (e) => {
             e.preventDefault();
 
             const updatedData = {
+                action: "update",
                 name: document.getElementById('profileName').value,
                 email: document.getElementById('lblProfileEmail').innerText, 
                 phone: document.getElementById('profilePhone').value,
@@ -702,7 +780,7 @@
                     body: JSON.stringify(updatedData)
                 });
 
-                if (response.ok || response.status === 200) {
+                if (response.ok) {
                     alert("Changes saved successfully to Google Sheet! 🚀");
                     closeNaukriModal();
                     if (typeof toggleLinkedInEditForm === 'function') {
@@ -718,104 +796,42 @@
         });
     }
 
-    function openN8nForm() { window.open(N8N_FORM_URL, '_blank'); }
-    
-    function updateFileName() {
-        const fileInput = document.getElementById('resumeFile');
-        const uploadText = document.getElementById('uploadText');
-        if(fileInput && fileInput.files.length > 0) {
-            uploadText.innerText = `✅ Selected File: ${fileInput.files[0].name}`;
-            uploadText.style.color = "#00ff88";
-        }
-    }
-
-    // --- रेझ्युमे अपलोड आणि पार्सिंग ---
-    async function uploadResume() {
-        const fileInput = document.getElementById('resumeFile');
-        const name = document.getElementById('seekerName').value;
-        const email = document.getElementById('seekerEmail').value;
-        const template = document.getElementById('resumeTemplate').value;
-        
-        if (!fileInput.files.length || !name || !email) { alert("Please upload Name, Email and Resume PDF!"); return; }
-
-        const formData = new FormData();
-        formData.append("resume", fileInput.files[0]);
-        formData.append("candidateName", name);
-        formData.append("candidateEmail", email);
-        formData.append("selectedTemplate", template);
-        
-        document.getElementById('loadingText').style.display = "block";
-        document.getElementById('resultCard').style.display = "none";
-
-        try {
-            const response = await fetch(RESUME_WEBHOOK_URL, { method: "POST", body: formData });
-            let score = "88", feedback = "Optimized by AI.";
-            if (response.ok) {
-                const result = await response.json();
-                if(result.score) score = result.score;
-                if(result.feedback) feedback = result.feedback;
-            }
-            document.getElementById('loadingText').style.display = "none";
-            document.getElementById('resultCard').style.display = "block"; 
-            document.getElementById('chosenTemplate').innerText = template;
-            document.getElementById('atsScore').innerText = score + "%";
-            document.getElementById('aiFeedback').innerText = feedback;
-            document.getElementById('pdfCandidateName').innerText = name;
-            document.getElementById('aiImprovedResume').innerText = `${name.toUpperCase()}\nEmail: ${email}\n[OBJECTIVE]\nOptimized Template Alignment: ${template}`;
-        } catch (error) {
-            document.getElementById('loadingText').style.display = "none";
-            document.getElementById('resultCard').style.display = "block";
-        }
-    }
-
-    function downloadATSResume() {
-        const element = document.getElementById('pdfResumeContent');
-        const candidateName = document.getElementById('seekerName').value || "Candidate";
-        const options = { margin: 15, filename: `${candidateName}_ATS_Resume.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { format: 'a4', orientation: 'portrait' } };
-        html2pdf().set(options).from(element).save();
-    }
-
-    // --- चॅटबॉक्स फंक्शन्स ---
+    // --- ५. चॅटबॉक्स सिस्टीम ---
     function toggleChat() {
         const chatBox = document.getElementById('chatBox');
-        if (chatBox) {
-            chatBox.style.display = (chatBox.style.display === 'none' || chatBox.style.display === '') ? 'flex' : 'none';
-        }
+        if(chatBox) chatBox.style.display = (chatBox.style.display === 'none' || chatBox.style.display === '') ? 'flex' : 'none';
     }
     
     function handleKeyPress(event) { if (event.key === 'Enter') sendMessage(); }
     
     async function sendMessage() {
         const inputField = document.getElementById('userInput');
-        const userText = inputField.value.trim();
+        const userText = inputField?.value.trim();
         if (!userText) return;
         appendMessage(userText, 'user-msg');
         inputField.value = '';
-        document.getElementById('typingIndicator').style.display = 'block';
+        if(document.getElementById('typingIndicator')) document.getElementById('typingIndicator').style.display = 'block';
 
         try {
-            const response = await fetch(N8N_WEBHOOK_URL, { 
-                method: 'POST', 
-                headers: { 'Content-Type': 'application/json' }, 
-                body: JSON.stringify({ chatInput: userText, sessionId: "jobseeker_session_101" }) 
-            });
+            const response = await fetch(N8N_WEBHOOK_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chatInput: userText, sessionId: "jobseeker_session_101" }) });
             const data = await response.json();
-            document.getElementById('typingIndicator').style.display = 'none';
+            if(document.getElementById('typingIndicator')) document.getElementById('typingIndicator').style.display = 'none';
             appendMessage(data.output || "No reply", 'bot-msg');
         } catch (error) {
-            document.getElementById('typingIndicator').style.display = 'none';
+            if(document.getElementById('typingIndicator')) document.getElementById('typingIndicator').style.display = 'none';
             appendMessage("Server connection error.", 'bot-msg');
         }
     }
     
     function appendMessage(text, className) {
         const chatMessages = document.getElementById('chatMessages');
+        if(!chatMessages) return;
         const msg = document.createElement('div'); msg.className = `msg ${className}`; msg.innerText = text;
         chatMessages.insertBefore(msg, document.getElementById('typingIndicator'));
         chatMessages.scrollTop = chatMessages.scrollHeight;
     }
 
-    // --- Vapi AI इंटरव्यू फंक्शन्स ---
+    // --- ६. Vapi AI लाइव्ह इंटरव्यू ---
     window.startAIInterview = async function() {
         const statusText = document.getElementById('interviewStatus');
         const userCamera = document.getElementById('userCamera');
@@ -862,10 +878,6 @@
                 cleanupMedia();
             });
 
-            vapiInstance.on('error', (err) => {
-                console.error("Vapi Error:", err);
-            });
-
             const currentName = document.getElementById('seekerName')?.value || "Unknown Candidate";
             const currentEmail = document.getElementById('seekerEmail')?.value || "no-email@test.com";
 
@@ -896,104 +908,58 @@
         if (document.getElementById('liveBadge')) document.getElementById('liveBadge').classList.add('hidden');
     }
 
-    // --- सेक्शन्स दाखवणे/लपवणे ---
+    // --- ७. सेक्शन्स डिस्प्ले टॉगल (UI व्यवस्थापन) ---
     function showProfileSection() {
-        const sectionsToHide = ['recommended-section', 'ats-section', 'interview-section'];
-        sectionsToHide.forEach(id => {
-            const el = document.getElementById(id);
-            if (el) el.style.display = 'none';
+        ['recommended-section', 'ats-section', 'interview-section'].forEach(id => {
+            const el = document.getElementById(id); if (el) el.style.display = 'none';
         });
-
-        const profileSec = document.getElementById('profile-section');
-        if (profileSec) profileSec.style.display = 'block';
-
+        if (document.getElementById('profile-section')) document.getElementById('profile-section').style.display = 'block';
         if (document.getElementById('profileDisplayCard')) document.getElementById('profileDisplayCard').style.display = 'block';
         if (document.getElementById('profileEditFormContainer')) document.getElementById('profileEditFormContainer').style.display = 'none';
         
         const editBtn = document.getElementById('editProfileBtn');
         if (editBtn) {
             editBtn.innerHTML = `<i class="fa-solid fa-pen"></i> Edit Profile`;
-            editBtn.style.background = '#1e293b';
-            editBtn.style.borderColor = '#38bdf8';
-            editBtn.style.color = '#38bdf8';
-        }
-
-        if (sidebarDrawer && sidebarDrawer.classList.contains('active')) {
-            sidebarDrawer.classList.remove('active');
-            bodyEl.classList.remove('sidebar-open');
+            editBtn.style.background = '#1e293b'; editBtn.style.color = '#38bdf8';
         }
     }
 
     function showAtsSection() {
-        const sections = ['profile-section', 'recommended-section', 'interview-section'];
-        sections.forEach(id => {
-            const el = document.getElementById(id);
-            if (el) el.style.display = 'none';
+        ['profile-section', 'recommended-section', 'interview-section'].forEach(id => {
+            const el = document.getElementById(id); if (el) el.style.display = 'none';
         });
-        const atsSec = document.getElementById('ats-section');
-        if (atsSec) atsSec.style.display = 'block';
+        if (document.getElementById('ats-section')) document.getElementById('ats-section').style.display = 'block';
     }
 
     function showInterviewSection() {
-        const sections = ['profile-section', 'recommended-section', 'ats-section'];
-        sections.forEach(id => {
-            const el = document.getElementById(id);
-            if (el) el.style.display = 'none';
+        ['profile-section', 'recommended-section', 'ats-section'].forEach(id => {
+            const el = document.getElementById(id); if (el) el.style.display = 'none';
         });
-        const intSec = document.getElementById('interview-section');
-        if (intSec) intSec.style.display = 'block';
+        if (document.getElementById('interview-section')) document.getElementById('interview-section').style.display = 'block';
     }
 
     function showRecommendedSection() {
-        const sections = ['profile-section', 'ats-section', 'interview-section'];
-        sections.forEach(id => {
-            const el = document.getElementById(id);
-            if (el) el.style.display = 'none';
+        ['profile-section', 'ats-section', 'interview-section'].forEach(id => {
+            const el = document.getElementById(id); if (el) el.style.display = 'none';
         });
-        const recSec = document.getElementById('recommended-section');
-        if (recSec) recSec.style.display = 'block';
+        if (document.getElementById('recommended-section')) document.getElementById('recommended-section').style.display = 'block';
     }
 
-    function resetDashboardView() {
-        const profileSec = document.getElementById('profile-section');
-        if (profileSec) profileSec.style.display = 'none';
-
-        const sectionsToShow = ['recommended-section', 'ats-section', 'interview-section'];
-        sectionsToShow.forEach(id => {
-            const el = document.getElementById(id);
-            if (el) el.style.display = 'block';
-        });
-    }
-
-    // --- मोडाॅल फंक्शन्स ---
     function openNaukriModal() {
-        const modal = document.getElementById('naukriProfileModal');
-        if (modal) { modal.style.display = 'flex'; }
-
+        const modal = document.getElementById('naukriProfileModal'); if (modal) modal.style.display = 'flex';
         const currentActiveEmail = document.getElementById('lblProfileEmail')?.innerText || localStorage.getItem("userEmail") || "";
         if (document.getElementById('profileEmail')) document.getElementById('profileEmail').value = currentActiveEmail;
-        
-        const currentName = document.getElementById('lblProfileName')?.innerText || "";
-        if (document.getElementById('profileName')) document.getElementById('profileName').value = currentName;
-
+        if (document.getElementById('profileName')) document.getElementById('profileName').value = document.getElementById('lblProfileName')?.innerText || "";
         if (document.getElementById('profileExperience')) document.getElementById('profileExperience').value = document.getElementById('lblProfileExperience')?.innerText || "";
-
-        const currentLocation = document.getElementById('lblProfileLocation')?.innerText || "";
-        if (document.getElementById('profileLocation')) document.getElementById('profileLocation').value = currentLocation === "Add location" ? "" : currentLocation;
-
-        const currentPhone = document.getElementById('lblProfilePhone')?.innerText || "";
-        if (document.getElementById('profilePhone')) document.getElementById('profilePhone').value = currentPhone === "Add Phone" ? "" : currentPhone;
-
-        const currentLinkedin = document.getElementById('lblProfileLinkedin')?.innerText || "";
-        if (document.getElementById('profileLinkedin')) document.getElementById('profileLinkedin').value = currentLinkedin === "Add LinkedIn URL" ? "" : currentLinkedin;
-
+        if (document.getElementById('profileLocation')) document.getElementById('profileLocation').value = document.getElementById('lblProfileLocation')?.innerText || "";
+        if (document.getElementById('profilePhone')) document.getElementById('profilePhone').value = document.getElementById('lblProfilePhone')?.innerText || "";
+        if (document.getElementById('profileLinkedin')) document.getElementById('profileLinkedin').value = document.getElementById('lblProfileLinkedin')?.innerText || "";
         if (document.getElementById('profileSkills')) document.getElementById('profileSkills').value = document.getElementById('lblProfileSkills')?.innerText || "";
         if (document.getElementById('profileEducation')) document.getElementById('profileEducation').value = document.getElementById('lblProfileEducation')?.innerText || "";
     }
 
     function closeNaukriModal() {
-        const modal = document.getElementById('naukriProfileModal');
-        if (modal) modal.style.display = 'none';
+        const modal = document.getElementById('naukriProfileModal'); if (modal) modal.style.display = 'none';
     }
 
     function toggleLinkedInEditForm() {
@@ -1003,23 +969,15 @@
         if (!editForm || !displayCard) return;
 
         if (editForm.style.display === 'none') {
-            editForm.style.display = 'block';
-            displayCard.style.display = 'none';
-            if (editBtn) {
-                editBtn.innerHTML = `<i class="fa-solid fa-xmark"></i> Close Editor`;
-                editBtn.style.background = '#7f1d1d';
-            }
+            editForm.style.display = 'block'; displayCard.style.display = 'none';
+            if (editBtn) editBtn.innerHTML = `<i class="fa-solid fa-xmark"></i> Close Editor`;
         } else {
-            editForm.style.display = 'none';
-            displayCard.style.display = 'block';
-            if (editBtn) {
-                editBtn.innerHTML = `<i class="fa-solid fa-pen"></i> Edit Profile`;
-                editBtn.style.background = '#1e293b';
-            }
+            editForm.style.display = 'none'; displayCard.style.display = 'block';
+            if (editBtn) editBtn.innerHTML = `<i class="fa-solid fa-pen"></i> Edit Profile`;
         }
     }
 
-    // --- डेटा फेचिंग आणि लोड इवेंट्स ---
+    // --- ८. डॉक्युमेंट रेडी इव्हेंट (ऑटो-लोड डेटा पाईपलाईन) ---
     window.addEventListener('DOMContentLoaded', async () => {
         const loggedInEmail = localStorage.getItem("userEmail") || "shrutisaste9@gmail.com"; 
         
@@ -1027,74 +985,58 @@
             document.getElementById('lblProfileEmail').innerText = loggedInEmail;
         }
 
-        console.log("🔍 Fetching data from Sheet via n8n for:", loggedInEmail);
+        console.log("🔍 Fetching data from Sheet via Server Proxy for:", loggedInEmail);
 
         try {
-            // प्रॉक्सी लिंक वापरली आहे जेणेकरून Render वर एरर येणार नाही
-            const response = await fetch('/proxy/update-profile', {
+            // तुमच्या नवीन एक्सप्रेस सर्व्हर प्रॉक्सी कडे रिक्वेस्ट पाठवली
+            const response = await fetch(N8N_PROFILE_UPDATE_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email: loggedInEmail, action: "fetch" }) 
             });
 
-            if (!response.ok) throw new Error(`HTTP Error Status: ${response.status}`);
+            if (response.ok) {
+                const rawData = await response.json();
+                let userData = Array.isArray(rawData) ? rawData[0] : rawData;
 
-            const rawData = await response.json();
-            console.log("📥 Raw Sheet Response Data:", rawData);
-
-            let userData = null;
-            if (Array.isArray(rawData) && rawData.length > 0) {
-                userData = rawData[0];
-            } else if (rawData && typeof rawData === 'object') {
-                userData = rawData.firstObject || rawData.data || rawData;
-                if (Array.isArray(userData)) { userData = userData[0]; }
-            }
-
-            if (userData && Object.keys(userData).length > 0) {
-                console.log("🎯 Extracted Final Row Object:", userData);
-
-                const finalName = userData.Name || userData.name || "Shruti Saste";
-                if (document.getElementById('lblProfileName')) document.getElementById('lblProfileName').innerText = finalName;
-                if (document.getElementById('welcomeName'))    document.getElementById('welcomeName').innerText = finalName;
-
-                if (document.getElementById('lblProfilePhone')) document.getElementById('lblProfilePhone').innerText = userData.Phone || userData.phone || "Add Phone";
-                if (document.getElementById('lblProfileLocation')) document.getElementById('lblProfileLocation').innerText = userData.Location || userData.location || "Add Location";
-                if (document.getElementById('lblProfileEducation')) document.getElementById('lblProfileEducation').innerText = userData.Education || userData.education || "Add Education";
-                if (document.getElementById('lblProfileExperience')) document.getElementById('lblProfileExperience').innerText = userData.Experience || userData.experience || "Fresher";
-                if (document.getElementById('lblProfileSkills')) document.getElementById('lblProfileSkills').innerText = userData.Skills || userData.skills || "Add Skills";
-                
-                if (document.getElementById('lblProfileLinkedin')) {
-                    document.getElementById('lblProfileLinkedin').innerText = userData.Linkedin || userData.linkedin || "Add LinkedIn URL";
+                if (userData && Object.keys(userData).length > 0) {
+                    const finalName = userData.Name || userData.name || "Shruti Saste";
+                    if (document.getElementById('lblProfileName')) document.getElementById('lblProfileName').innerText = finalName;
+                    if (document.getElementById('welcomeName'))    document.getElementById('welcomeName').innerText = finalName;
+                    if (document.getElementById('lblProfilePhone')) document.getElementById('lblProfilePhone').innerText = userData.Phone || userData.phone || "Add Phone";
+                    if (document.getElementById('lblProfileLocation')) document.getElementById('lblProfileLocation').innerText = userData.Location || userData.location || "Add Location";
+                    if (document.getElementById('lblProfileEducation')) document.getElementById('lblProfileEducation').innerText = userData.Education || userData.education || "Add Education";
+                    if (document.getElementById('lblProfileExperience')) document.getElementById('lblProfileExperience').innerText = userData.Experience || userData.experience || "Fresher";
+                    if (document.getElementById('lblProfileSkills')) document.getElementById('lblProfileSkills').innerText = userData.Skills || userData.skills || "Add Skills";
+                    if (document.getElementById('lblProfileLinkedin')) document.getElementById('lblProfileLinkedin').innerText = userData.Linkedin || userData.linkedin || "Add LinkedIn URL";
+                    console.log("🎉 Profile cards loaded smoothly!");
                 }
-                console.log("🎉 All dashboard cards loaded successfully!");
             }
         } catch (error) {
-            console.error("❌ Auto loading pipeline failed:", error);
+            console.error("❌ Profile Auto loading failed:", error);
         }
 
-        // लोड होताच जॉब्स रेंडर करणे
-        renderJobs();
+        // सर्वर वरून जॉब्स फेच करणे
+        fetchJobsFromServer();
     });
 
     async function fetchJobsFromServer() {
         try {
-            const response = await fetch('/proxy/job-application-test'); 
+            const response = await fetch('/api/jobs'); // किंवा तुमच्या एक्सप्रेसचा योग्य जॉब्स राऊट
             if (response.ok) {
                 const data = await response.json();
                 localStorage.setItem("jobs", JSON.stringify(data));
-                jobs.length = 0;
-                jobs.push(...data);
-                renderJobs(); 
+                jobs.length = 0; jobs.push(...data);
             }
         } catch (error) {
             console.error("Jobs fetch error:", error);
         }
+        renderJobs();
     }
 
     window.addEventListener('storage', () => {
         const updatedJobs = JSON.parse(localStorage.getItem("jobs")) || [];
-        jobs.length = 0; 
-        jobs.push(...updatedJobs);
+        jobs.length = 0; jobs.push(...updatedJobs);
         renderJobs();
     });
 </script>
