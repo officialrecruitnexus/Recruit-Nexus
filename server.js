@@ -141,41 +141,59 @@ app.get('/jobseeker-dashboard.html', (req, res) => {
 });
 
 const N8N_SERVER_BASE = "https://3dzqxw2k-5678.inc1.devtunnels.ms"; 
+const FormData = require('form-data'); // हे एक्सप्रेसमध्ये इन-बिल्ट असतं किंवा इंस्टॉल करावं लागतं
 
-
-app.post('/proxy/job-application', async (req, res) => {
+// 📑 १. Job Application Live Proxy (With File Support)
+app.post('/proxy/job-application', upload.single('data'), async (req, res) => {
     try {
+        const n8nFormData = new FormData();
+        
+       
+        for (const key in req.body) {
+            n8nFormData.append(key, req.body[key]);
+        }
+        
+       
+        if (req.file) {
+            n8nFormData.append('data', req.file.buffer, {
+                filename: req.file.originalname,
+                contentType: req.file.mimetype,
+            });
+        }
+
         const response = await fetch(`${N8N_SERVER_BASE}/webhook/Job%20Application`, {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(req.body)
+            method: 'POST',
+            body: n8nFormData, // फॉर्म डेटा फॉरवर्ड केला
+            headers: n8nFormData.getHeaders() // योग्य हेडर ऑटोमॅटिक सेट होतील
         });
+
         res.status(response.status).send(await response.text());
-    } catch (e) { res.status(500).send("Proxy Error"); }
+    } catch (e) {
+        console.error("Application Proxy Error:", e);
+        res.status(500).send("Proxy Error");
+    }
 });
 
-
-app.post('/proxy/job-application-test', async (req, res) => {
+// 🧪 २. Job Application Test Proxy (With File Support)
+app.post('/proxy/job-application-test', upload.single('data'), async (req, res) => {
     try {
+        const n8nFormData = new FormData();
+        for (const key in req.body) { n8nFormData.append(key, req.body[key]); }
+        if (req.file) {
+            n8nFormData.append('data', req.file.buffer, {
+                filename: req.file.originalname,
+                contentType: req.file.mimetype,
+            });
+        }
+
         const response = await fetch(`${N8N_SERVER_BASE}/webhook-test/Job%20Application`, {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(req.body)
+            method: 'POST', body: n8nFormData, headers: n8nFormData.getHeaders()
         });
         res.status(response.status).send(await response.text());
     } catch (e) { res.status(500).send("Proxy Error"); }
 });
 
-
-app.post('/proxy/parse-resume', async (req, res) => {
-    try {
-        const response = await fetch(`${N8N_SERVER_BASE}/webhook/parse-resume`, {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(req.body)
-        });
-        res.status(response.status).send(await response.text());
-    } catch (e) { res.status(500).send("Proxy Error"); }
-});
-
-
+// 💬 ३. Jobseeker Chat Proxy (Regular JSON)
 app.post('/proxy/jobseeker-chat', async (req, res) => {
     try {
         const response = await fetch(`${N8N_SERVER_BASE}/webhook/jobseeker-chat`, {
@@ -185,18 +203,6 @@ app.post('/proxy/jobseeker-chat', async (req, res) => {
         res.status(response.status).send(await response.text());
     } catch (e) { res.status(500).send("Proxy Error"); }
 });
-
-
-app.post('/proxy/update-profile', async (req, res) => {
-    try {
-        const response = await fetch(`${N8N_SERVER_BASE}/webhook/update-profile`, {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(req.body)
-        });
-        res.status(response.status).send(await response.text());
-    } catch (e) { res.status(500).send("Proxy Error"); }
-});
-
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
