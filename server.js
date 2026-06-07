@@ -209,7 +209,24 @@ app.post('/proxy/update-profile', async (req, res) => {
         res.status(500).send("Proxy Error");
     }
 });
-
+app.get('/proxy/get-applicants', async (req, res) => {
+    try {
+        const response = await fetch('https://3dzqxw2k-5678.inc1.devtunnels.ms/webhook/get-applicants');
+        const data = await response.json();
+        res.status(200).json(data);
+    } catch (e) {
+        res.status(500).json({ error: "Proxy route crashed" });
+    }
+});
+app.get('/proxy/vapi-interview-data', async (req, res) => {
+    try {
+        const response = await fetch('https://3dzqxw2k-5678.inc1.devtunnels.ms/webhook/vapi-interview-data');
+        const data = await response.json();
+        res.status(200).json(data);
+    } catch (e) {
+        res.status(500).json({ error: "Vapi data proxy error" });
+    }
+});
 
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
