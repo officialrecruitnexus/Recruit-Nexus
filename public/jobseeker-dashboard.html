@@ -540,7 +540,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@vapi-ai/web@1.0.1/dist/vapi.browser.js"></script>
 
 <script>
-    // --- n8n ऑटोमेशन प्रॉक्सी लिंक्स (तुमच्या नवीन server.js नुसार) ---
+    // --- n8n ऑटोमेशन प्रॉक्सी लिंक्स ---
     const BASE_TUNNEL_URL         = "/proxy/job-application";
     const WEBHOOK_URL             = "/proxy/job-application-test";
     const RESUME_WEBHOOK_URL      = "/proxy/parse-resume";
@@ -559,7 +559,6 @@
     let vapiInstance = null;
 
     // --- १. ग्लोबल फंक्शन्स (HTML Elements साठी ऑन-क्लिक) ---
-    
     window.openN8nForm = function() { 
         window.open(N8N_FORM_URL, '_blank'); 
     };
@@ -568,7 +567,7 @@
         const fileInput = document.getElementById('resumeFile');
         const uploadText = document.getElementById('uploadText');
         if(fileInput && fileInput.files.length > 0) {
-            uploadText.innerText = "✅ Selected File: " + fileInput.files[0].name;
+            uploadText.innerText = "Selected File: " + fileInput.files[0].name;
             uploadText.style.color = "#00ff88";
         }
     };
@@ -607,10 +606,6 @@
             if(document.getElementById('chosenTemplate')) document.getElementById('chosenTemplate').innerText = template;
             if(document.getElementById('atsScore')) document.getElementById('atsScore').innerText = score + "%";
             if(document.getElementById('aiFeedback')) document.getElementById('aiFeedback').innerText = feedback;
-            if(document.getElementById('pdfCandidateName')) document.getElementById('pdfCandidateName').innerText = name;
-            if(document.getElementById('aiImprovedResume')) {
-                document.getElementById('aiImprovedResume').innerText = name.toUpperCase() + "\nEmail: " + email + "\n[OBJECTIVE]\nOptimized Template Alignment: " + template;
-            }
         } catch (error) {
             console.error("Resume Upload Error:", error);
             if(document.getElementById('loadingText')) document.getElementById('loadingText').style.display = "none";
@@ -632,7 +627,7 @@
         html2pdf().set(options).from(element).save();
     };
 
-    // --- २. साईडबार आणि नेव्हिगेशन ---
+    // --- २. साईडबार आणि नेव्हिगेशन (मेनू पॅनल फिक्स) ---
     window.scrollToSection = function(sectionId) {
         if (sectionId === 'profile-section') {
             showProfileSection();
@@ -657,34 +652,20 @@
         jobs.forEach(job => {
             const card = document.createElement("div");
             card.className = "job-card";
-            
-            const jobDescription = job.description || job.desc || 'No description provided.';
-            const location = job.location || 'Not Specified';
-            const experience = job.experience || 'Not Specified';
-            const salary = job.salary || 'Not Specified';
             const id = job.id || 'N/A';
-            const role = job.role || 'N/A';
+            const jobDescription = job.description || job.desc || 'No description provided.';
 
             card.innerHTML = `
                 <h3 style="margin-top:0; color:#ffffff; font-size: 20px; margin-bottom: 5px;">${job.title}</h3>
-                <p style="color:#b2bec3; font-size: 13px; margin: 0 0 10px 0;">
-                    Dept: ${job.category || 'Engineering'} | ID: ${id} | Role: ${role}
-                </p>
-                <div style="display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 15px; font-size: 14px; color: #dfe6e9;">
-                    <span>📍 ${location}</span>
-                    <span>💼 ${experience}</span>
-                    <span>💰 ${salary}</span>
-                </div>
+                <p style="color:#b2bec3; font-size: 13px; margin: 0 0 10px 0;">ID: ${id}</p>
                 <div style="background: #ffffff; padding: 12px; border-radius: 8px; margin-bottom: 15px; font-size: 14px; color: #2d3436;">
-                    <strong style="color: #2d3436; display: block; margin-bottom: 4px;">📝 Description:</strong>
                     <span style="display: block; white-space: pre-line; line-height: 1.4;">${jobDescription}</span>
                 </div>
                 <div class="apply-form" style="display: flex; flex-direction: column; gap: 10px;">
-                    <input type="text" id="name_${id}" placeholder="Full Name" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #636e72; background: #2d3436; color: #fff;">
-                    <input type="email" id="email_${id}" placeholder="Email Address" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #636e72; background: #2d3436; color: #fff;">
-                    <label style="font-size: 13px; font-weight: bold; color: #dfe6e9; display: block; margin-top: 5px;">Attach Resume (PDF):</label>
-                    <input type="file" id="file_${id}" accept=".pdf" style="color: #dfe6e9;">
-                    <button onclick="autoApply('${id}', '${job.title}')" id="btn_${id}" style="width: 100%; background: #3498db; color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; margin-top: 10px; font-size: 14px;">
+                    <input type="text" id="name_${id}" placeholder="Full Name" style="width: 100%; padding: 10px; background: #2d3436; color: #fff;">
+                    <input type="email" id="email_${id}" placeholder="Email Address" style="width: 100%; padding: 10px; background: #2d3436; color: #fff;">
+                    <input type="file" id="file_${id}" accept=".pdf">
+                    <button onclick="autoApply('${id}', '${job.title}')" id="btn_${id}" style="width: 100%; background: #3498db; color: white; padding: 12px; font-weight: bold; cursor: pointer;">
                         Instant Apply
                     </button>
                 </div>
@@ -693,42 +674,31 @@
         });
     };
 
-   window.autoApply = async function(jobId, jobTitle) {
+    window.autoApply = async function(jobId, jobTitle) {
         const name = document.getElementById(`name_${jobId}`)?.value;
         const email = document.getElementById(`email_${jobId}`)?.value;
         const file = document.getElementById(`file_${jobId}`)?.files[0];
         const btn = document.getElementById(`btn_${jobId}`);
 
-        if (!name || !email || !file) { 
-            alert("Please provide your name, email address, and a resume!"); 
-            return; 
-        }
+        if (!name || !email || !file) { alert("Please provide your name, email address, and a resume!"); return; }
         btn.disabled = true; btn.innerText = "Processing...";
 
         const formData = new FormData();
         formData.append("Candidate Name", name);
         formData.append("Email Address", email); 
         formData.append("Applying for Position", jobTitle);
-        
-        // ❌ जुना कोड: formData.append("data", file);
-        //  नवा दुरुस्त कोड (सर्व्हर आणि n8n मॅचिंगसाठी):
         formData.append("resume_file", file); 
 
         try {
-            // WEBHOOK_URL (/proxy/job-application-test) चा वापर करा जेणेकरून n8n च्या टेस्ट विंडोमध्ये डेटा दिसेल
             const res = await fetch(WEBHOOK_URL, { method: 'POST', body: formData });
             if (res.ok) {
-                alert("Success! Application submitted successfully.");
+                alert("Success! Application submitted.");
                 btn.innerText = "Applied ✓";
                 btn.style.background = "#28a745";
-            } else { 
-                throw new Error("Server error"); 
-            }
+            } else { throw new Error("Server error"); }
         } catch (err) {
-            console.error("Apply Error:", err);
-            alert("Connection failed! Check if server or tunnel is running.");
-            btn.disabled = false; 
-            btn.innerText = "Instant Apply";
+            alert("Connection failed!");
+            btn.disabled = false; btn.innerText = "Instant Apply";
         }
     };
 
@@ -748,7 +718,6 @@
         if (!userText) return;
         appendMessage(userText, 'user-msg');
         inputField.value = '';
-        if(document.getElementById('typingIndicator')) document.getElementById('typingIndicator').style.display = 'block';
 
         try {
             const response = await fetch(N8N_WEBHOOK_URL, { 
@@ -757,10 +726,8 @@
                 body: JSON.stringify({ chatInput: userText, sessionId: "jobseeker_session_101" }) 
             });
             const data = await response.json();
-            if(document.getElementById('typingIndicator')) document.getElementById('typingIndicator').style.display = 'none';
             appendMessage(data.output || "No reply", 'bot-msg');
         } catch (error) {
-            if(document.getElementById('typingIndicator')) document.getElementById('typingIndicator').style.display = 'none';
             appendMessage("Server connection error.", 'bot-msg');
         }
     };
@@ -769,75 +736,27 @@
         const chatMessages = document.getElementById('chatMessages');
         if(!chatMessages) return;
         const msg = document.createElement('div'); msg.className = "msg " + className; msg.innerText = text;
-        chatMessages.insertBefore(msg, document.getElementById('typingIndicator'));
+        chatMessages.appendChild(msg);
         chatMessages.scrollTop = chatMessages.scrollHeight;
     }
 
     // --- ५. Vapi AI लाइव्ह इंटरव्यू ---
     window.startAIInterview = async function() {
         const statusText = document.getElementById('interviewStatus');
-        const userCamera = document.getElementById('userCamera');
-        const videoPlaceholder = document.getElementById('videoPlaceholder');
-        const liveBadge = document.getElementById('liveBadge');
-
-        if (statusText) statusText.innerHTML = `<i class="fa-solid fa-spinner animate-spin mr-2"></i>Vapi is Connecting...`;
-        
         try {
-            streamRef = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-            if (userCamera) {
-                userCamera.srcObject = streamRef;
-                userCamera.style.display = "block"; 
-                userCamera.classList.remove('hidden');
-            }
-            if (videoPlaceholder) videoPlaceholder.style.display = "none";
-
-            if (typeof Vapi === 'function') {
-                vapiInstance = new Vapi(VAPI_PUBLIC_KEY);
-            } else if (window.VapiWeb) {
+            if (typeof window.VapiWeb !== 'undefined') {
                 vapiInstance = new window.VapiWeb(VAPI_PUBLIC_KEY);
+                vapiInstance.start(ASSISTANT_ID);
+                if (statusText) statusText.innerText = "Interview Started...";
             } else {
-                alert("Vapi SDK is not loaded yet, please refresh the page.");
-                return;
+                alert("Vapi SDK is still loading...");
             }
-            
-            vapiInstance.on('call-start', () => {
-                if (statusText) statusText.innerHTML = '<span style="color:#10b981; font-weight:bold;"><i class="fa-solid fa-comment-dots mr-2"></i>Interview started!</span>';
-                if (liveBadge) liveBadge.classList.remove('hidden');
-            });
-
-            vapiInstance.on('call-end', () => {
-                if (statusText) statusText.innerHTML = '<span style="color:#38bdf8; font-weight:bold;"><i class="fa-solid fa-square-check mr-2"></i>Interview completed!</span>';
-                cleanupMedia();
-            });
-
-            const currentName = document.getElementById('seekerName')?.value || "Unknown Candidate";
-            const currentEmail = document.getElementById('seekerEmail')?.value || "no-email@test.com";
-
-            vapiInstance.start(ASSISTANT_ID, {
-                assistant: {
-                    variableValues: {
-                        "candidateName": currentName,
-                        "candidateEmail": currentEmail
-                    }
-                }
-            });
-
-        } catch (err) {
-            if (statusText) statusText.innerHTML = '<span style="color:#10b981; font-weight:bold;"><i class="fa-solid fa-circle-check mr-2"></i>System is Ready..</span>';
-        }
+        } catch (err) { console.error(err); }
     };
 
     window.stopAIInterview = function() {
         if (vapiInstance) vapiInstance.stop();
-        cleanupMedia();
     };
-
-    function cleanupMedia() {
-        if (streamRef) streamRef.getTracks().forEach(track => track.stop());
-        if (document.getElementById('userCamera')) document.getElementById('userCamera').style.display = "none";
-        if (document.getElementById('videoPlaceholder')) document.getElementById('videoPlaceholder').style.display = "block";
-        if (document.getElementById('liveBadge')) document.getElementById('liveBadge').classList.add('hidden');
-    }
 
     // --- ६. सेक्शन्स डिस्प्ले टॉगल ---
     window.showProfileSection = function() {
@@ -845,8 +764,6 @@
             const el = document.getElementById(id); if (el) el.style.display = 'none';
         });
         if (document.getElementById('profile-section')) document.getElementById('profile-section').style.display = 'block';
-        if (document.getElementById('profileDisplayCard')) document.getElementById('profileDisplayCard').style.display = 'block';
-        if (document.getElementById('profileEditFormContainer')) document.getElementById('profileEditFormContainer').style.display = 'none';
     };
 
     window.showAtsSection = function() {
@@ -870,17 +787,6 @@
         if (document.getElementById('recommended-section')) document.getElementById('recommended-section').style.display = 'block';
     };
 
-    window.toggleLinkedInEditForm = function() {
-        const displayCard = document.getElementById('profileDisplayCard');
-        const editForm = document.getElementById('profileEditFormContainer');
-        if (!editForm || !displayCard) return;
-        if (editForm.style.display === 'none') {
-            editForm.style.display = 'block'; displayCard.style.display = 'none';
-        } else {
-            editForm.style.display = 'none'; displayCard.style.display = 'block';
-        }
-    };
-
     // --- ७. डेटा लोड ऑन लोड ---
     window.fetchJobsFromServer = async function() {
         try {
@@ -890,25 +796,24 @@
                 jobs.length = 0; 
                 jobs.push(...data);
             }
-        } catch (error) {
-            console.error("Jobs fetch error:", error);
-        }
+        } catch (error) { console.error(error); }
         renderJobs();
     };
 
+    // 📱 मेनू पॅनल लिसनर (हा पॅनल चालू करेल)
     window.addEventListener('DOMContentLoaded', () => {
         const toggleSidebarBtn = document.getElementById('toggleSidebarBtn');
         const sidebarDrawer = document.getElementById('sidebarDrawer');
+        
         if (toggleSidebarBtn && sidebarDrawer) {
             toggleSidebarBtn.addEventListener('click', () => {
                 sidebarDrawer.classList.toggle('active');
                 document.body.classList.toggle('sidebar-open');
             });
         }
-        
-        
         fetchJobsFromServer();
     });
 </script>
+
 </body>
 </html>
