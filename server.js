@@ -10,19 +10,16 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const usersFile = path.join(__dirname, "users.json");
 
-
 const uploadDir = path.join(__dirname, "uploads");
 if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir);
 }
-
 
 const upload = multer();
 
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
 
 app.use(express.static(path.join(__dirname, 'public'), {
     setHeaders: (res, filePath) => {
@@ -33,7 +30,6 @@ app.use(express.static(path.join(__dirname, 'public'), {
 }));
 
 const N8N_SERVER_BASE = "https://3dzqxw2k-5678.inc1.devtunnels.ms"; 
-
 
 app.post('/webhook/vapi-results', async (req, res) => {
     try {
@@ -52,7 +48,6 @@ app.post('/webhook/vapi-results', async (req, res) => {
     }
 });
 
-
 const getUsers = () => {
     if (!fs.existsSync(usersFile)) {
         fs.writeFileSync(usersFile, JSON.stringify([], null, 2));
@@ -61,7 +56,6 @@ const getUsers = () => {
     const data = fs.readFileSync(usersFile, 'utf8');
     return JSON.parse(data);
 };
-
 
 app.post('/register', async (req, res) => {
     try {
@@ -124,10 +118,8 @@ app.get('/jobseeker-dashboard.html', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'jobseeker-dashboard.html'));
 });
 
-
-
-
-app.post('/proxy/job-application', upload.single('data'), async (req, res) => {
+// 💼 १. मुख्य जॉब अप्लिकेशन प्रॉक्सी (दुरुस्त केलेला)
+app.post('/proxy/job-application', upload.single('resume_file'), async (req, res) => {
     try {
         const n8nFormData = new FormData();
         
@@ -136,7 +128,8 @@ app.post('/proxy/job-application', upload.single('data'), async (req, res) => {
         }
         
         if (req.file) {
-            n8nFormData.append('data', req.file.buffer, {
+            // n8n मधील 'Extract from File' नोडला 'resume_file' याच नावाने डेटा पाठवणे गरजेचे आहे
+            n8nFormData.append('resume_file', req.file.buffer, {
                 filename: req.file.originalname,
                 contentType: req.file.mimetype,
             });
@@ -155,13 +148,13 @@ app.post('/proxy/job-application', upload.single('data'), async (req, res) => {
     }
 });
 
-
-app.post('/proxy/job-application-test', upload.single('data'), async (req, res) => {
+// 🧪 २. जॉब अप्लिकेशन टेस्ट प्रॉキシ (दुरुस्त केलेला)
+app.post('/proxy/job-application-test', upload.single('resume_file'), async (req, res) => {
     try {
         const n8nFormData = new FormData();
         for (const key in req.body) { n8nFormData.append(key, req.body[key]); }
         if (req.file) {
-            n8nFormData.append('data', req.file.buffer, {
+            n8nFormData.append('resume_file', req.file.buffer, {
                 filename: req.file.originalname,
                 contentType: req.file.mimetype,
             });
@@ -177,7 +170,6 @@ app.post('/proxy/job-application-test', upload.single('data'), async (req, res) 
     }
 });
 
-
 app.post('/proxy/jobseeker-chat', async (req, res) => {
     try {
         const response = await fetch(`${N8N_SERVER_BASE}/webhook/jobseeker-chat`, {
@@ -192,10 +184,9 @@ app.post('/proxy/jobseeker-chat', async (req, res) => {
     }
 });
 
-
+// 👤 ३. प्रोफाईल अपडेट प्रॉキシ ('ा' अक्षर काढून फिक्स केलेला)
 app.post('/proxy/update-profile', async (req, res) => {
     try {
-       ा
         const targetPath = req.body.action === "fetch" ? 'get-profile' : 'update-profile';
         
         const response = await fetch(`${N8N_SERVER_BASE}/webhook/${targetPath}`, {
@@ -209,18 +200,20 @@ app.post('/proxy/update-profile', async (req, res) => {
         res.status(500).send("Proxy Error");
     }
 });
+
 app.get('/proxy/get-applicants', async (req, res) => {
     try {
-        const response = await fetch('https://3dzqxw2k-5678.inc1.devtunnels.ms/webhook/get-applicants');
+        const response = await fetch(`${N8N_SERVER_BASE}/webhook/get-applicants`);
         const data = await response.json();
         res.status(200).json(data);
     } catch (e) {
         res.status(500).json({ error: "Proxy route crashed" });
     }
 });
+
 app.get('/proxy/vapi-interview-data', async (req, res) => {
     try {
-        const response = await fetch('https://3dzqxw2k-5678.inc1.devtunnels.ms/webhook/vapi-interview-data');
+        const response = await fetch(`${N8N_SERVER_BASE}/webhook/vapi-interview-data`);
         const data = await response.json();
         res.status(200).json(data);
     } catch (e) {
