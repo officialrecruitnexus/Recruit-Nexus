@@ -3,7 +3,6 @@ const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
 const multer = require('multer'); 
-const pdf = require('pdf-parse');
 const FormData = require('form-data');
 
 const app = express();
@@ -29,25 +28,8 @@ app.use(express.static(path.join(__dirname, 'public'), {
     }
 }));
 
-const N8N_SERVER_BASE = "https://3dzqxw2k-5678.inc1.devtunnels.ms"; // १. Job Application Live Proxy
-
-app.post('/proxy/job-application', async (req, res) => {
-
-try {
-
-const response = await fetch(`${N8N_SERVER_BASE}/webhook/Job%20Application`, {
-
-method: 'POST', headers: { 'Content-Type': 'application/json' },
-
-body: JSON.stringify(req.body)
-
-});
-
-res.status(response.status).send(await response.text());
-
-} catch (e) { res.status(500).send("Proxy Error"); }
-
-});
+// 🔗 Centralized Deployment / Tunnel Configuration 
+const N8N_SERVER_BASE = "https://3dzqxw2k-5678.inc1.devtunnels.ms";
 
 const getUsers = () => {
     if (!fs.existsSync(usersFile)) {
@@ -58,6 +40,7 @@ const getUsers = () => {
     return JSON.parse(data);
 };
 
+// --- 🔐 AUTHENTICATION API ROUTES ---
 app.post('/register', async (req, res) => {
     try {
         const { name, email, password, role } = req.body;
@@ -110,7 +93,7 @@ app.get('/api/get-profile', (req, res) => {
     }
 });
 
-// --- 📄 PAGE ROUTING ---
+// --- 📄 UI / PAGE ROUTING ---
 app.get('/interview', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'interview.html'));
 });
@@ -119,18 +102,22 @@ app.get('/jobseeker-dashboard.html', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'jobseeker-dashboard.html'));
 });
 
-// 💼 १. मुख्य जॉब अप्लिकेशन प्रॉक्सी (दुरुस्त केलेला)
-app.post('/proxy/job-application', upload.single('resume_file'), async (req, res) => {
+
+// --- 💼 PROXIED N8N WEBHOOK ROUTES ---
+
+// १. मुख्य जॉब इन्स्टंट अप्लिकेशन प्रॉक्सी (Multipart Form-Data Handling)
+app.post('/proxy/job-application', upload.single('data'), async (req, res) => {
     try {
         const n8nFormData = new FormData();
         
+        // सर्व टेक्स्ट फिल्ड्स अपेंड करा (Candidate Name, Email Address, etc.)
         for (const key in req.body) {
             n8nFormData.append(key, req.body[key]);
         }
         
+        // फ्रंटएंडवरून येणारी फाईल (resume pdf) गोळा करून n8n कडे फॉरवर्ड करणे
         if (req.file) {
-            // n8n मधील 'Extract from File' नोडला 'resume_file' याच नावाने डेटा पाठवणे गरजेचे आहे
-            n8nFormData.append('resume_file', req.file.buffer, {
+            n8nFormData.append('data', req.file.buffer, {
                 filename: req.file.originalname,
                 contentType: req.file.mimetype,
             });
@@ -149,28 +136,33 @@ app.post('/proxy/job-application', upload.single('resume_file'), async (req, res
     }
 });
 
-// 🧪 २. जॉब अप्लिकेशन टेस्ट प्रॉキシ (दुरुस्त केलेला)
-app.post('/proxy/job-application-test', upload.single('resume_file'), async (req, res) => {
+// २. AI ATS रेझ्युमे स्कॅनर प्रॉキシ
+app.post('/proxy/parse-resume', upload.single('resume'), async (req, res) => {
     try {
         const n8nFormData = new FormData();
-        for (const key in req.body) { n8nFormData.append(key, req.body[key]); }
+        for (const key in req.body) { 
+            n8nFormData.append(key, req.body[key]); 
+        }
         if (req.file) {
-            n8nFormData.append('resume_file', req.file.buffer, {
+            n8nFormData.append('resume', req.file.buffer, {
                 filename: req.file.originalname,
                 contentType: req.file.mimetype,
             });
         }
 
-        const response = await fetch(`${N8N_SERVER_BASE}/webhook-test/Job%20Application`, {
-            method: 'POST', body: n8nFormData, headers: n8nFormData.getHeaders()
+        const response = await fetch(`${N8N_SERVER_BASE}/webhook/parse-resume`, {
+            method: 'POST', 
+            body: n8nFormData, 
+            headers: n8nFormData.getHeaders()
         });
         res.status(response.status).send(await response.text());
     } catch (e) { 
-        console.error("Test Proxy Error:", e);
+        console.error("Resume Parser Proxy Error:", e);
         res.status(500).send("Proxy Error"); 
     }
 });
 
+// ३. जॉबसीकर AI चॅटबॉट प्रॉक्सी
 app.post('/proxy/jobseeker-chat', async (req, res) => {
     try {
         const response = await fetch(`${N8N_SERVER_BASE}/webhook/jobseeker-chat`, {
@@ -185,23 +177,37 @@ app.post('/proxy/jobseeker-chat', async (req, res) => {
     }
 });
 
-// 👤 ३. प्रोफाईल अपडेट प्रॉキシ ('ा' अक्षर काढून फिक्स केलेला)
+// ४. प्रोफाईल अपडेट प्रॉक्सी (Google Sheet सेव्हिंगसाठी)
 app.post('/proxy/update-profile', async (req, res) => {
     try {
-        const targetPath = req.body.action === "fetch" ? 'get-profile' : 'update-profile';
-        
-        const response = await fetch(`${N8N_SERVER_BASE}/webhook/${targetPath}`, {
+        const response = await fetch(`${N8N_SERVER_BASE}/webhook/update-profile`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(req.body)
         });
         res.status(response.status).send(await response.text());
     } catch (e) {
-        console.error("Profile Proxy Error:", e);
+        console.error("Profile Update Proxy Error:", e);
         res.status(500).send("Proxy Error");
     }
 });
 
+// ५. प्रोफाईल डेटा मिळवण्यासाठी प्रॉक्सी (Auto-Fill Onload)
+app.post('/proxy/get-profile', async (req, res) => {
+    try {
+        const response = await fetch(`${N8N_SERVER_BASE}/webhook/get-profile`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(req.body)
+        });
+        res.status(response.status).send(await response.text());
+    } catch (e) {
+        console.error("Fetch Profile Proxy Error:", e);
+        res.status(500).send("Proxy Error");
+    }
+});
+
+// ६. रिक्रूटर्ससाठी अ‍ॅप्लिकेशन्स मिळवणे 
 app.get('/proxy/get-applicants', async (req, res) => {
     try {
         const response = await fetch(`${N8N_SERVER_BASE}/webhook/get-applicants`);
@@ -212,6 +218,7 @@ app.get('/proxy/get-applicants', async (req, res) => {
     }
 });
 
+// ७. Vapi इंटरव्ह्यू डेटा रेकॉर्ड्स
 app.get('/proxy/vapi-interview-data', async (req, res) => {
     try {
         const response = await fetch(`${N8N_SERVER_BASE}/webhook/vapi-interview-data`);
@@ -222,6 +229,7 @@ app.get('/proxy/vapi-interview-data', async (req, res) => {
     }
 });
 
+// Server Initialization
 app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+    console.log(`🚀 Server running flawlessly on port ${PORT}`);
 });
