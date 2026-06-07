@@ -693,31 +693,42 @@
         });
     };
 
-    window.autoApply = async function(jobId, jobTitle) {
-        const name = document.getElementById(`name_${jobId}`).value;
-        const email = document.getElementById(`email_${jobId}`).value;
-        const file = document.getElementById(`file_${jobId}`).files[0];
+   window.autoApply = async function(jobId, jobTitle) {
+        const name = document.getElementById(`name_${jobId}`)?.value;
+        const email = document.getElementById(`email_${jobId}`)?.value;
+        const file = document.getElementById(`file_${jobId}`)?.files[0];
         const btn = document.getElementById(`btn_${jobId}`);
 
-        if (!name || !email || !file) { alert("Please provide your name, email address, and a resume!"); return; }
+        if (!name || !email || !file) { 
+            alert("Please provide your name, email address, and a resume!"); 
+            return; 
+        }
         btn.disabled = true; btn.innerText = "Processing...";
 
         const formData = new FormData();
         formData.append("Candidate Name", name);
         formData.append("Email Address", email); 
         formData.append("Applying for Position", jobTitle);
-        formData.append("data", file);
+        
+        // ❌ जुना कोड: formData.append("data", file);
+        //  नवा दुरुस्त कोड (सर्व्हर आणि n8n मॅचिंगसाठी):
+        formData.append("resume_file", file); 
 
         try {
-            const res = await fetch(BASE_TUNNEL_URL, { method: 'POST', body: formData });
+            // WEBHOOK_URL (/proxy/job-application-test) चा वापर करा जेणेकरून n8n च्या टेस्ट विंडोमध्ये डेटा दिसेल
+            const res = await fetch(WEBHOOK_URL, { method: 'POST', body: formData });
             if (res.ok) {
-                alert("Success! Check " + email + " for your evaluation results shortly.");
+                alert("Success! Application submitted successfully.");
                 btn.innerText = "Applied ✓";
                 btn.style.background = "#28a745";
-            } else { throw new Error("Server error"); }
+            } else { 
+                throw new Error("Server error"); 
+            }
         } catch (err) {
-            alert("Connection failed!");
-            btn.disabled = false; btn.innerText = "Instant Apply";
+            console.error("Apply Error:", err);
+            alert("Connection failed! Check if server or tunnel is running.");
+            btn.disabled = false; 
+            btn.innerText = "Instant Apply";
         }
     };
 
