@@ -145,11 +145,13 @@
 
 
 <script>
-    const FETCH_APPLICANTS_URL = "https://3dzqxw2k-5678.inc1.devtunnels.ms/webhook/get-applicants";
-    const JOB_WEBHOOK = "https://3dzqxw2k-5678.inc1.devtunnels.ms/webhook/Job%20Application";
-    const INTERVIEW_DATA_URL = 'https://3dzqxw2k-5678.inc1.devtunnels.ms/webhook/vapi-interview-data';
-    const EMAIL_WEBHOOK_URL = "/webhook/vapi-results"; 
+  // ❌ जुन्या डायरेक्ट n8n टनेलच्या लिंक्स (ज्यामुळे CORS एरर येत होता) काढून हा नवीन कोड टाका:
+const FETCH_APPLICANTS_URL = "/proxy/get-applicants";
+const INTERVIEW_DATA_URL   = "/proxy/vapi-interview-data";
 
+// 💼 जॉब ॲप्लिकेशन आणि ईमेल वेकहूक जर अजून डायरेक्ट असतील तर त्यांनाही तुमच्या एक्सप्रेस सर्व्हर मार्गे रूट करा:
+const JOB_WEBHOOK          = "/proxy/job-application"; 
+const EMAIL_WEBHOOK_URL    = "/proxy/vapi-results";
     let jobs = JSON.parse(localStorage.getItem("jobs")) || [];
 
     async function checkSheetSync() {
@@ -211,71 +213,78 @@
     });
 }
 
-    async function openApplicants(jobTitle) {
-        const modal = document.getElementById("applicantsModal");
-        const list = document.getElementById("applicantsList");
-        document.getElementById("modalJobTitle").innerText = jobTitle;
-        
-        list.innerHTML = `<tr><td colspan="4" style="text-align:center;">Fetching Live Data...</td></tr>`;
-        modal.style.display = "flex";
-
-        if (typeof loadInterviews === "function") {
-            loadInterviews();
-        }
-
-        try {
-            const response = await fetch(FETCH_APPLICANTS_URL);
-            
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
-            const textData = await response.text(); 
-            
-            if (!textData || textData.trim() === "" || textData === "[]") {
-                list.innerHTML = `<tr><td colspan="4" style="text-align:center;">No applicants found (Sheet is empty).</td></tr>`;
-                return;
-            }
-
-            const data = JSON.parse(textData);
-            console.log("Data From Sheet :", data);
-            
-            const dataArray = Array.isArray(data) ? data : [data];
-
-            const filtered = dataArray.filter(app => {
-                const sheetJob = (app["Job Title"] || app.JobTitle || app.title || app.job || "").toString().toLowerCase().trim();
-                return sheetJob === jobTitle.toLowerCase().trim();
-            });
-
-            if (filtered.length === 0) {
-                list.innerHTML = `<tr><td colspan="4" style="text-align:center;">No applicants found for this job.</td></tr>`;
-            } else {
-                
-                list.innerHTML = filtered.map(app => {
-                    const appEmail = app.Email || app["Email Address"] || app.email || '';
-                    const appName = app.Name || app.name || 'Candidate';
-                    const currentJob = jobTitle;
-                    const analysisText = app["Result/Score"] || app.Score || app["AI Analysis"] || app.Analysis || app.score || 'Verified ✓';
-
-                    return `
-                        <tr>
-                            <td style="color: white; font-weight: bold;">${appName}</td>
-                            <td>${appEmail}</td>
-                            <td style="font-size: 0.85em; color: #3498db;">${analysisText}</td>
-                            <td>
-                                <button onclick="sendInterviewMail('${appEmail}', '${appName}', '${currentJob}')" class="btn-action-schedule">
-                                    Schedule 📅
-                                </button>
-                            </td>
-                        </tr>
-                    `;
-                }).join('');
-            }
-        } catch (err) {
-            console.error("Fetch Error:", err);
-            list.innerHTML = `<tr><td colspan="4" style="color:red; text-align:center;">Live Connection Failed (JSON Error).</td></tr>`;
-        }
+   async function openApplicants(jobTitle) {
+    const modal = document.getElementById("applicantsModal");
+    const list = document.getElementById("applicantsList");
+    
+    if (!modal || !list) {
+        console.error("Required DOM elements not found!");
+        return;
     }
+
+    document.getElementById("modalJobTitle").innerText = jobTitle;
+    list.innerHTML = `<tr><td colspan="4" style="text-align:center; color: #3498db;"><i class="fa-solid fa-spinner animate-spin mr-2"></i>Fetching Live Data via Server Proxy...</td></tr>`;
+    modal.style.display = "flex";
+
+    if (typeof loadInterviews === "function") {
+        loadInterviews();
+    }
+
+    try {
+        // ❌ जुनी डायरेक्ट n8n URL काढून आपण आता आपल्या एक्सप्रेस सर्व्हरच्या सुरक्षित प्रॉक्सी पाथला कॉल करत आहोत
+        const response = await fetch("/proxy/get-applicants");
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const textData = await response.text(); 
+        
+        if (!textData || textData.trim() === "" || textData === "[]") {
+            list.innerHTML = `<tr><td colspan="4" style="text-align:center; color: #dfe6e9;">No applicants found (Sheet is empty).</td></tr>`;
+            return;
+        }
+
+        const data = JSON.parse(textData);
+        console.log("Data From Sheet via Express Proxy:", data);
+        
+        const dataArray = Array.isArray(data) ? data : [data];
+
+        // फिल्टर सिस्टीम (नोकरीच्या नावाप्रमाणे अचूक मॅचिंग)
+        const filtered = dataArray.filter(app => {
+            const sheetJob = (app["Job Title"] || app.JobTitle || app.title || app.job || "").toString().toLowerCase().trim();
+            return sheetJob === jobTitle.toLowerCase().trim();
+        });
+
+        if (filtered.length === 0) {
+            list.innerHTML = `<tr><td colspan="4" style="text-align:center; color: #dfe6e9;">No applicants found for this job.</td></tr>`;
+        } else {
+            list.innerHTML = filtered.map(app => {
+                const appEmail = app.Email || app["Email Address"] || app.email || '';
+                const appName = app.Name || app.name || 'Candidate';
+                const currentJob = jobTitle;
+                const analysisText = app["Result/Score"] || app.Score || app["AI Analysis"] || app.Analysis || app.score || 'Verified ✓';
+
+                return `
+                    <tr>
+                        <td style="color: white; font-weight: bold; padding: 12px;">${appName}</td>
+                        <td style="color: #b2bec3; padding: 12px;">${appEmail}</td>
+                        <td style="font-size: 0.9em; color: #2ecc71; padding: 12px; font-weight: 500;">${analysisText}</td>
+                        <td style="padding: 12px;">
+                            <button onclick="sendInterviewMail('${appEmail}', '${appName}', '${currentJob}')" class="btn-action-schedule" style="background: #3498db; color: white; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.2s;">
+                                Schedule 📅
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+    } catch (err) {
+        console.error("Fetch Error:", err);
+        // जर एक्सप्रेस सर्व्हर किंवा टनेलमध्ये अडचण असेल तरच हा एरर दिसेल
+        list.innerHTML = `<tr><td colspan="4" style="color:#ff7675; text-align:center; font-weight: bold; padding: 12px;">⚠️ Connection Failed. Ensure local server or n8n tunnel is running.</td></tr>`;
+    }
+}
     async function sendInterviewMail(email, name, job) {
     if (!email || email.trim() === "" || email === 'N/A') {
         alert("This candidate's email ID was not found!");
@@ -311,44 +320,51 @@
     }
 }
 
-    async function loadInterviews() {
-        const tableBody = document.getElementById('recruiterTableBody');
-        if (!tableBody) return;
+   async function loadInterviews() {
+    const tableBody = document.getElementById('recruiterTableBody');
+    if (!tableBody) return;
 
-        try {
-            const response = await fetch(INTERVIEW_DATA_URL);
-            const text = await response.text();
-            
-            if (!text || text.trim() === "") {
-                tableBody.innerHTML = `<tr><td colspan="3" style="text-align:center;">No interview data yet.</td></tr>`;
-                return;
-            }
-
-            const data = JSON.parse(text);
-            tableBody.innerHTML = ''; 
-            const items = Array.isArray(data) ? data : [data];
-            
-            items.forEach(item => {
-                const name = item["Candidate Name"] || item["Name"] || item["name"] || item["candidateName"] || item["candidate_name"] || item["candidate"] || 'N/A';
-                const summary = item["Summary"] || item["Interview Summary"] || 'No Summary Available';
-                const recording = item["Recording URL"] || item["Recording"] || '#';
-
-                tableBody.innerHTML += `
-                    <tr>
-                        <td style="color: white; font-weight: bold;">${name}</td>
-                        <td style="font-size: 0.85em; color: #ccc;">${summary}</td>
-                        <td>
-                            <a href="${recording}" target="_blank" style="color: #00ff88; text-decoration: none; font-weight: bold;">
-                                Play Recording 🎙️
-                            </a>
-                        </td>
-                    </tr>`;
-            });
-        } catch (error) {
-            tableBody.innerHTML = `<tr><td colspan="3" style="color:gray; text-align:center;">Interview results pending...</td></tr>`;
+    try {
+        // ❌ जुनी डायरेक्ट n8n URL (INTERVIEW_DATA_URL) काढून आपण आता आपल्या एक्सप्रेस सर्व्हरच्या सुरक्षित प्रॉキシ पाथला कॉल करत आहोत
+        const response = await fetch("/proxy/vapi-interview-data");
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
         }
-    }
 
+        const text = await response.text();
+        
+        if (!text || text.trim() === "" || text === "[]") {
+            tableBody.innerHTML = `<tr><td colspan="3" style="text-align:center; color: #b2bec3; padding: 12px;">No interview data yet.</td></tr>`;
+            return;
+        }
+
+        const data = JSON.parse(text);
+        tableBody.innerHTML = ''; 
+        const items = Array.isArray(data) ? data : [data];
+        
+        items.forEach(item => {
+            const name = item["Candidate Name"] || item["Name"] || item["name"] || item["candidateName"] || item["candidate_name"] || item["candidate"] || 'N/A';
+            const summary = item["Summary"] || item["Interview Summary"] || 'No Summary Available';
+            const recording = item["Recording URL"] || item["Recording"] || '#';
+
+            tableBody.innerHTML += `
+                <tr>
+                    <td style="color: white; font-weight: bold; padding: 12px;">${name}</td>
+                    <td style="font-size: 0.9em; color: #dfe6e9; padding: 12px; line-height: 1.4;">${summary}</td>
+                    <td style="padding: 12px;">
+                        <a href="${recording}" target="_blank" style="color: #00ff88; text-decoration: none; font-weight: bold; display: inline-flex; align-items: center; gap: 5px;">
+                            Play Recording 🎙️
+                        </a>
+                    </td>
+                </tr>`;
+        });
+    } catch (error) {
+        console.error("Load Interviews Error:", error);
+        // जर एक्सप्रेस सर्व्हर किंवा टनेल कनेक्टेड नसेल तर हा मेसेज दिसेल
+        tableBody.innerHTML = `<tr><td colspan="3" style="color:#ff7675; text-align:center; font-weight: bold; padding: 12px;">⚠️ Interview results pending or Connection Failed.</td></tr>`;
+    }
+}
     async function addJob() {
         let title = document.getElementById("jobTitle").value;
         let dept = document.getElementById("jobDept").value;
