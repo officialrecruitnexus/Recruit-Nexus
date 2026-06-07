@@ -6,7 +6,7 @@
     <title>Jobseeker Dashboard | Recruit Nexus</title>
     <link rel="stylesheet" href="style.css">
     
-    <script src="https://cdn.jsdelivr.net/npm/@vapi-ai/web@1.0.1/dist/vapi.js"></script>
+   <script src="https://cdn.jsdelivr.net/npm/@vapi-ai/web@1.0.1/dist/vapi.browser.js"></script>
     <script src="https://unpkg.com/@vapi-ai/web@1.0.1/dist/vapi.browser.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
@@ -788,6 +788,7 @@
     };
 
     // --- ७. डेटा लोड ऑन लोड ---
+   // --- ७. डेटा लोड ऑन लोड ---
     window.fetchJobsFromServer = async function() {
         try {
             const response = await fetch('/api/jobs'); 
@@ -796,9 +797,34 @@
                 jobs.length = 0; 
                 jobs.push(...data);
             }
-        } catch (error) { console.error(error); }
-        renderJobs();
+        } catch (error) { 
+            console.error("Jobs load error:", error); 
+        }
+        if (typeof renderJobs === "function") renderJobs();
     };
+
+    // 📱 मेनू पॅनल क्लिक सिस्टीम (तुमच्या HTML क्लास आणि ID नुसार)
+    window.initSidebar = function() {
+        const toggleSidebarBtn = document.getElementById('toggleSidebarBtn');
+        const sidebarDrawer = document.getElementById('sidebarDrawer');
+        
+        if (toggleSidebarBtn && sidebarDrawer) {
+            toggleSidebarBtn.onclick = function(e) {
+                e.preventDefault(); // पेज रिफ्रेश होण्यापासून रोखण्यासाठी
+                sidebarDrawer.classList.toggle('active');
+                document.body.classList.toggle('sidebar-open');
+                console.log("Menu Panel Clicked! Sidebar toggled.");
+            };
+        } else {
+            console.error("Sidebar elements (toggleSidebarBtn or sidebarDrawer) missing in HTML!");
+        }
+    };
+
+    // पेज पूर्ण लोड झाल्यावर सर्व्हिसेस सुरू करा
+    window.addEventListener('load', () => {
+        window.initSidebar();
+        window.fetchJobsFromServer();
+    });
 
     // 📱 मेनू पॅनल लिसनर (हा पॅनल चालू करेल)
     window.addEventListener('DOMContentLoaded', () => {
