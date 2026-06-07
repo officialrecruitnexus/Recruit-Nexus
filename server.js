@@ -29,23 +29,24 @@ app.use(express.static(path.join(__dirname, 'public'), {
     }
 }));
 
-const N8N_SERVER_BASE = "https://3dzqxw2k-5678.inc1.devtunnels.ms"; 
+const N8N_SERVER_BASE = "https://3dzqxw2k-5678.inc1.devtunnels.ms"; // १. Job Application Live Proxy
 
-app.post('/webhook/vapi-results', async (req, res) => {
-    try {
-        const n8nWebhookUrl = `${N8N_SERVER_BASE}/webhook/vapi-results`; 
+app.post('/proxy/job-application', async (req, res) => {
 
-        const response = await fetch(n8nWebhookUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(req.body)
-        });
+try {
 
-        res.status(response.status).send("Data forwarded successfully");
-    } catch (error) {
-        console.error("Error forwarding to n8n:", error);
-        res.status(500).send("Internal Server Error");
-    }
+const response = await fetch(`${N8N_SERVER_BASE}/webhook/Job%20Application`, {
+
+method: 'POST', headers: { 'Content-Type': 'application/json' },
+
+body: JSON.stringify(req.body)
+
+});
+
+res.status(response.status).send(await response.text());
+
+} catch (e) { res.status(500).send("Proxy Error"); }
+
 });
 
 const getUsers = () => {
